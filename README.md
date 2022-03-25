@@ -1,7 +1,7 @@
 # Amazon_Braket_Monitoring_Tools
 Tools to monitor Amazon Braket
 
-このリポジトリはAmazon Braketを利用する上でのタスク監視、削除の支援ツールです。
+このリポジトリはAmazon Braketを利用する上でのタスク監視、削除の支援ツールのコード置き場です。
 
 
 ### shot.py 
