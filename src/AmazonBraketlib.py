@@ -2,71 +2,121 @@ import boto3
 from collections import defaultdict
 from datetime import datetime, date, timedelta
 
-class AmazonBraketlib:
-    def __init__(self,region,clientToken):
-        self.region = region
-        self.clientToken = clientToken
-        self.braket = boto3.client('braket',region_name=self.region)
 
-    def massage_maker(self,date,time,device,count):
-        message = "At "+str(date)+str(time)+" "+"I detected increaing by "+str(count)+"at "+device+". Please keep care."
+class AmazonBraketlib:
+
+    def __init__(self):
+        """Initialize configuration of braket client and some data
+        """
+        self.s3_bucket_name_list=[]
+        self.s3_bucket_folder_name_list=defaultdict(list)
+        self.time_me=0
+        self.total_shots_dic={}
+        self.s3_shot_count_dic={}
+        self.s3_count_id={}
+        self.braket = boto3.client('braket')
+
+    def message_maker(self,date,time,device,count):
+        """Make a warning message
+
+        Args:
+            data:
+            time:
+            device:
+            count:
+        """
+        message = "At "+str(date)+str(time)+" "+"I detected increaning by "+str(count)+"at "+device+". Please keep care."
         return message
 
     def make_markdown_from_list(self,str_time,target_list):
+        """Make markdown-format string from target list
+
+        Args:
+            str_time (str): time
+            target_list (str):
+
+        Returns:
+            _type_: _description_
+        """
         res_str = ""
         res_str += str_time + "<br/>"
         res_str += " ".join(target_list) + "<br/>"
         return res_str
 
-    def res_print(self,dict):
-        for k in dict.keys():print(k,dict[k])
+    def cal(self,year,month,day,device_type,device_provider,device_name,index_of_status_type,response,delta):
+            """calculate the number of shots for each bucket
 
-    def get_info(self,year,month,day,device_a,device_m,device_e,i):
+            Args:
 
-        def cal(self):
-            for k in response['quantumTasks']:
-                # print(k)
-                if (date(year,month,day) - k['createdAt'].date() > delta1) == True:
-                    return 1
-                    break
-                if k['status'] == target_name[i] and k['createdAt'].date() == date(year,month,day):
-                    total_shots_array[target_name[i]] +=  + k['shots']
-                    time_me = k['createdAt'].time()
 
-                    tmp_s3_dic_name_array = list(k['outputS3Directory'].split('/'))
-                    if k['outputS3Bucket'] not in s3bucket_name_array:
-                        s3bucket_name_array.append(k['outputS3Bucket'])
-                        count_dic[k['outputS3Bucket']] = 0
-                        count_id[k['outputS3Bucket']] = []
-                    count_dic[k['outputS3Bucket']] += k['shots']
-                    count_id[k['outputS3Bucket']].append(k['quantumTaskArn'])
+            Returns:
+                bool:
+            """
 
-                    if tmp_s3_dic_name_array[0] not in s3bucket_dic_name_dic[k['outputS3Bucket']]:
-                        s3bucket_dic_name_dic[k['outputS3Bucket']].append(tmp_s3_dic_name_array[0])
-                        count_dic[k['outputS3Bucket']+'/'+tmp_s3_dic_name_array[0]] = 0
-                        count_id[k['outputS3Bucket']+'/'+tmp_s3_dic_name_array[0]] = []
-                    count_dic[k['outputS3Bucket']+'/'+tmp_s3_dic_name_array[0]] += k['shots']
-                    count_id[k['outputS3Bucket']+'/'+tmp_s3_dic_name_array[0]].append(k['quantumTaskArn'])
+            for task in response['quantumTasks']:
+                # Returns False if the data is not the given date
+                if task['status'] == target_name[index_of_status_type] and task['createdAt'].date() == date(year,month,day):
+                    self.total_shots_dic[target_name[index_of_status_type]] += task['shots']
+                    self.time_me = task['createdAt'].time()
 
-        s3bucket_name_array = []
-        s3bucket_dic_name_dic = defaultdict(list)
-        s3bucket_dic_id_dic = defaultdict(list)
-        count_dic = {}
-        count_id = {}
-        delta1 = timedelta(seconds=60)
+                    # output s3 information is like this
+                    #'count': {'amazon-braket-issa': 8100,
+                    # 'amazon-braket-issa/boto-examples': 100,
+                    #  'amazon-braket-issa/task-check-example': 8000},
 
-        total_shots = 0
+                    # 新たなs3 bucketなら, appendしてやる
+                    if task['outputS3Bucket'] not in self.s3_bucket_name_list:
+                        self.s3_bucket_name_list.append(task['outputS3Bucket'])
+                        self.s3_shot_count_dic[task['outputS3Bucket']] = 0
+                        self.s3_count_id[task['outputS3Bucket']] = []
+                    # bucket内のshot数を加算
+                    self.s3_shot_count_dic[task['outputS3Bucket']] += task['shots']
+                    # bucketに新たなtaskを加える
+                    self.s3_count_id[task['outputS3Bucket']].append(task['quantumTaskArn'])
+                    # task result fileの格納フォルダ名
+                    self.s3_folder_name = list(task['outputS3Directory'].split('/'))[0]
+                    bucket_name=task['outputS3Bucket']+'/'+self.s3_folder_name
+                    if self.s3_folder_name not in self.s3_bucket_folder_name_list[task['outputS3Bucket']]:
+                        self.s3_bucket_folder_name_list[task['outputS3Bucket']].append(self.s3_folder_name)
+                        self.s3_shot_count_dic[bucket_name] = 0
+                        self.s3_count_id[bucket_name] = []
+                    self.s3_shot_count_dic[bucket_name] += task['shots']
+                    self.s3_count_id[bucket_name].append(task['quantumTaskArn'])
+                elif (date(year,month,day) - task['createdAt'].date() > delta) == True:
+                    return False
+
+    def get_info(self,year,month,day,device_type,device_provider,device_name,index_of_status_type):
+        """Get information on tasks for a specified device on a specified date
+
+        Args:
+            year (_type_): _description_
+            month (_type_): _description_
+            day (_type_): _description_
+            device_type = 'qpu'
+            device_type (str): qpu or quantum-simulator
+            device_provider (str): provider name (ex. amazon, d-wave, rigetti)
+            device_name (str): device name (ex. Aspen-10, tn1)
+            index_of_status_type (int):  index of status type(0:QUEUED,1:COMPLETED, 2:CANCELLED, 3:RUNNING)
+
+        Returns:
+        """
+        self.s3_bucket_name_list = []
+        self.s3_bucket_folder_name_list = defaultdict(list)
+        self.s3_shot_count_dic = {}
+        self.s3_count_id = {}
+        self.total_shots_dic = {}
+        # statusのディクショナリーを設定
         target_name = ['QUEUED','COMPLETED','CANCELLED','RUNNING']
-        total_shots_array = {}
-        for I in target_name:total_shots_array[I] = 0
-
-        target_status = target_name[i]
-        device_n = 'device'
-        device_name = device_n+'/'+device_a+'/'+device_m+'/'+device_e
-
-        #Search Quantum Tasks recursively
-        next_token = ''
-
+        # 調べるstatusを指定
+        target_status = target_name[index_of_status_type]
+        # total_hosts_dicの初期化
+        for I in target_name:
+            self.total_shots_dic[I] = 0
+        # 指定した日付とタスクの日付の差の上限
+        delta = timedelta(seconds=60)
+        # 調べるdeviceの名前を指定
+        device_name = 'device'+'/'+device_type+'/'+device_provider+'/'+device_name
+        # Array of SearchQuantumTasksFilter objects.
         own_filters = [
             {
                 'name': 'deviceArn',
@@ -76,44 +126,48 @@ class AmazonBraketlib:
                 ]
             },
         ]
-
+        # search_quantum_tasksは, json形式のstrを返し, "nextToken":次のタスクのトークン と "quantumTasks":filterにマッチしたタスクのarrayオブジェクトが返される.
         response = self.braket.search_quantum_tasks(
             filters=own_filters,
             maxResults=100
         )
-        time_me =0;flag = 0
+        # taskの時刻
+        time_me =0
+        # 1回目のnext_tokenはnullにしておく. すると先頭からsearchしてくれる.
+        next_token = ''
+        # taskが存在するかのフラグ
+        has_next_token = True
 
-        flag = cal(self)
-        if 'nextToken' in response:next_token = response['nextToken']
-        elif flag==1:
-            next_token = False
-            return {"id":count_id,
-                    "count":count_dic,"total_shots":total_shots_array[target_name[i]],
-                "hardware": device_m,
-                    "qpu": device_e,"status":target_status,
-                    'date':str(year)+'-'+str(month)+'-'+str(day),
-                'time':str(time_me)}
-
-        else:next_token = False
-        while next_token and flag==0:
+        # 再帰的にtaskを検索. 毎回maxResults分のタスクを取ってくる.
+        while has_next_token:
             response = self.braket.search_quantum_tasks(
                 filters=own_filters,
                 maxResults=100,
                 nextToken = next_token
             )
+            has_next_token = self.cal(year,month,day,device_type,device_provider,device_name,index_of_status_type,response,delta)
 
-            flag = cal(self)
-            if 'nextToken' in response:next_token = response['nextToken']
-            elif flag==1:break
-            else:break
+            # 次のtokenがないなら, 終了
+            if has_next_token==True:
+                # nextTokenは, 次のトークンがない場合nullであるため, もしnullだとresponse['nextToken']でエラーになる
+                if 'nextToken' in response:
+                    next_token = response['nextToken']
 
-        return {"id":count_id,
-                "count":count_dic,"total_shots":total_shots_array[target_name[i]],
-            "hardware": device_m,
-                "qpu": device_e,"status":target_status,
+        return {"id":self.s3_count_id,
+                "count":self.s3_shot_count_dic,"total_shots":self.total_shots_dic[target_name[index_of_status_type]],
+            "hardware": device_provider,
+                "qpu": device_name,"status":target_status,
                 'date':str(year)+'-'+str(month)+'-'+str(day),
             'time':str(time_me)}
 
+
     def delete_quantumTask(self,quantumTaskArn_name):
+        """delete specific quantumTask
+        Args:
+            quantumTaskArn_name (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         response = self.braket.cancel_quantum_task(clientToken= self.clientToken, quantumTaskArn= quantumTaskArn_name)
         return response
