@@ -2,7 +2,6 @@
 import json
 import os
 from time import sleep
-
 import boto3
 from boto3.session import Session
 from collections import defaultdict
@@ -11,28 +10,13 @@ from AmazonBraketlib import AmazonBraketlib
 
 
 def lambda_handler(event, context):
+    SECRET_KEY=''
+    TOPIC_ARN = ''
 
-    now_time = datetime.now()
-    now_month = str(now_time.date().month)
-    now_date = str(now_time.date())
-    prev_time = datetime.now().date()
-    today = datetime.now().date()
-    today_date = str(prev_time).split('-')
-    today_date_int = []
-    now_date = str(datetime.now().date())
-    for i in today_date:
-        today_date_int.append(int(i))
-
-    ama_us_west_1 = AmazonBraketlib('us-west-1', 'SECRET_KEY')  # riggeti
-    ama_us_west_2 = AmazonBraketlib('us-west-2', 'SECRET_KEY')  # D-wave
-    ama_us_east_1 = AmazonBraketlib('us-east-1', 'SECRET_KEY')  # IonQ
+    ama_us_west_1 = AmazonBraketlib('us-west-1', SECRET_KEY)  # riggeti
+    ama_us_west_2 = AmazonBraketlib('us-west-2', SECRET_KEY)  # D-wave
+    ama_us_east_1 = AmazonBraketlib('us-east-1', SECRET_KEY)  # IonQ
     ama = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
-
-    delta_day = timedelta(days=1)
-    prev_time = datetime.now() - delta_day
-    now_date = str(datetime.now().date())
-    now_time = datetime.now()
-    que = []
 
     time_index = datetime.now().time()
 
@@ -50,9 +34,7 @@ def lambda_handler(event, context):
     for i, j in zip(d_m, d_e):
         device_dict[j] = i
 
-    def get_sigle_device(device, state_number):
-        tmp_res = ama[ama_dict[device]].get_info(*today_date_int, 'qpu', device_dict[device], device, state_number)
-        return tmp_res
+
 
     d_m = ['d-wave', 'd-wave', 'ionq', 'rigetti']
     d_e = ['DW_2000Q_6', 'Advantage_system4', 'ionQdevice', 'Aspen-11']
@@ -83,23 +65,23 @@ def lambda_handler(event, context):
     all_task_count_list = [0, 0, 0]
     all_shots = 0
     for i in range(3):
-        tmp_res = ama[ama_dict[m]].get_info(*today_date_int, 'qpu', m, e, i)
+        result = ama[ama_dict[m]].get_info(*today_date_int, 'qpu', m, e, i)
 
-        all_state_dict[time_index] = tmp_res
-        all_shots += tmp_res['total_shots']
-        all_shots_list[i] += tmp_res['total_shots']
-        if tmp_res['total_shots']:
-            for id_name in tmp_res['id'].keys():
+        all_state_dict[time_index] = result
+        all_shots += result['total_shots']
+        all_shots_list[i] += result['total_shots']
+        if result['total_shots']:
+            for id_name in result['id'].keys():
                 if not '/' in id_name:
-                    all_task_count_list[i] += len(tmp_res['id'][id_name])
+                    all_task_count_list[i] += len(result['id'][id_name])
 
-        tmp_res['device'] = e
-    total_shots_dict[tmp_res['device']] = all_shots_list[0]+all_shots_list[1]
-    total_shots_dict_v[tmp_res['device']] = all_shots_list[0]
+        result['device'] = e
+    total_shots_dict[result['device']] = all_shots_list[0]+all_shots_list[1]
+    total_shots_dict_v[result['device']] = all_shots_list[0]
 
     new_dict = {}
-    new_dict['date'] = tmp_res['date']
-    new_dict['qpu'] = tmp_res['qpu']
+    new_dict['date'] = result['date']
+    new_dict['qpu'] = result['qpu']
     new_dict['QUEUED_counts'] = all_shots_list[0]
     new_dict['QUEUED_task_counts'] = all_task_count_list[0]
 
@@ -144,7 +126,6 @@ def lambda_handler(event, context):
 
     msg = str(new_dict)
     subject = 'Braket Monitor'
-    TOPIC_ARN = 'TOPIC_EXAMPLE'
     response = client.publish(
         TopicArn=TOPIC_ARN,
         Message=msg,
@@ -152,3 +133,9 @@ def lambda_handler(event, context):
     )
 
     return new_dict
+
+
+def get_sigle_device(ama, ama_dict, device_dict, device, state_number):
+    result = ama[ama_dict[device]].get_info(datetime.now().year, datetime.now(
+    ).month, datetime.now().day, 'qpu', device_dict[device], device, state_number)
+    return result

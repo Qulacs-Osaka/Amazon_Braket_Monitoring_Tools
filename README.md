@@ -28,6 +28,8 @@ shot数に応じてtaskを消去するlambda関数
 ## lambda_function_money.py
 
 金額に応じてtaskを消去するlambda関数
+
+## Example
 ### shot.py
 
 実行すると簡易なタスクを投げることができる。確認用。

@@ -9,7 +9,7 @@ class AmazonBraketlib:
         """Initialize configuration of braket client and some data
         Args:
             region: The AWS Region
-            clientToken: client Token
+            clientToken: client Token(aws_access_key_id)
         """
         # store bucket name
         self.s3_bucket_name_list = []
