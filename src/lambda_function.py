@@ -6,9 +6,22 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+#  task status ['QUEUED','COMPLETED','CANCELLED']
 
 def lambda_handler(event, context):
-    TOPIC_ARN = ''
+    """Cancel all QUEUED tasks if total shots or cost is over the max value and send result message to the email.
+
+    Args:
+        event (_type_): event
+        context (_type_): context
+
+    Returns:
+        (str): json-format string
+    """
+    
+    TOPIC_ARN = ""
+    MAX_SHOT_NUM=50
+    MAX_SHOT_COST=5 # dollar
 
     logger.info(event)
     # set boto user
@@ -84,3 +97,68 @@ def lambda_handler(event, context):
     )
 
     return lambda_output
+
+
+def delete_task_over_max_shot(
+        max_shot_num, ama, device_region_index_dict,today_data_intyear, device_type, device_provider, device_name, index_of_status_type):
+    """delete QUEUED task according to the number of shots
+    Args:
+        max_shot_num :
+        ama :
+        device_region_index_dict :
+        today_data_intyear :
+        device_type :
+        device_provider :
+        device_name :
+        index_of_status_type :
+
+    Returns:
+        result : TODO　削除したtask_id全て列挙
+    """
+    task_info_list_each_status = []
+    num_of_shots_each_status= [0, 0, 0]
+    num_of_completed_shots = 0
+
+    for task_status_index in range(3):
+        task_info = ama[device_region_index_dict[device_provider]].get_info(
+            *today_date_int, 'qpu', device_provider,device_name, index_of_status_type)
+
+        task_info_list_each_status.append(task_info)
+        num_of_shots_each_status[i] += task_info['total_shots']
+
+    # for debug
+    print(
+        "\r" + str(datetime.now().time()) + ' QUEUED ' + str(num_of_shots_each_status[0]) + ' COMPLETED ' +
+        str(num_of_shots_each_status[1]) + " CANCELLED " + str(num_of_shots_each_status[2]),
+        end="")
+
+
+    # 現在QUEUEDのshots合計が50以上なら, 全部のQUEUD taskを削除
+    if sum(num_of_shots_each_status[0]) >= max_shot_num:
+        for bucket_name in task_info_list_each_status[0]['id']:
+            # bucket_nameにはbucketとそのfolderの両方がtask_idsに代入されるため,
+            # '/'があったら飛ばす(folderの中のtaskはとばす)
+            if '/' not in bucket_name:
+                for task_id in task_info_list_each_status[0]['id'][bucket_name]:
+                    ama[device_region_index_dict[specific_device_name]].delete_quantumTask(task_id)
+
+
+def delete_task_over_max_cost(
+        max_cost,ama, device_region_index_dict, today_data_intyear, device_type, device_provider, device_name,
+        index_of_status_type):
+    """Delete QUEUD task accordingly when the maximum cost is exceeded
+    Args:
+        max_cost :
+        ama :
+        device_region_index_dict :
+        today_data_intyear :
+        device_type :
+        device_provider :
+        device_name :
+        index_of_status_type :
+    Returns:
+        result : 削除したtask_id 全列挙
+    """
+
+    # TODO
+
