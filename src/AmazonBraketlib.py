@@ -1,3 +1,4 @@
+from email.policy import default
 import boto3
 from collections import defaultdict
 from datetime import datetime, date, timedelta
@@ -14,7 +15,7 @@ class AmazonBraketlib:
         # store bucket name
         self.s3_bucket_name_list = []
         # store folder name
-        self.s3_bucket_folder_name_list = {}
+        self.s3_bucket_folder_name_list = defaultdict{list}
         self.total_shots_dic = {}
         self.s3_shot_count_dic = {}
         self.s3_count_id = {}
@@ -108,7 +109,7 @@ class AmazonBraketlib:
 
         """
         self.s3_bucket_name_list = []
-        self.s3_bucket_folder_name_list = {}
+        self.s3_bucket_folder_name_list = defaultdict{list}
         self.s3_shot_count_dic = {}
         self.s3_count_id = {}
         self.total_shots_dic = {}

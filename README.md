@@ -20,10 +20,14 @@ Braket taskを監視・削除する基本メソッドが含まれたクラス.
 ```
 
 - delete_quantumTask(quantumTaskArn_name)
+
 QUEUED状態の指定したタスクをキャンセルできる.
 ## lambda_fucntion.py
 
+shot数に応じてtaskを消去するlambda関数
 ## lambda_function_money.py
+
+金額に応じてtaskを消去するlambda関数
 ### shot.py
 実行すると簡易なタスクを投げることができる。確認用。
 
