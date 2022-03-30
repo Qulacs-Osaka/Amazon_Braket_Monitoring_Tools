@@ -14,7 +14,7 @@ class AmazonBraketlib:
         # store bucket name
         self.s3_bucket_name_list = []
         # store folder name
-        self.s3_bucket_folder_name_list = defaultdict(list)
+        self.s3_bucket_folder_name_list = {}
         self.total_shots_dic = {}
         self.s3_shot_count_dic = {}
         self.s3_count_id = {}
@@ -50,7 +50,7 @@ class AmazonBraketlib:
         res_str += " ".join(target_list) + "<br/>"
         return res_str
 
-    def cal(self, year, month, day, device_type, device_provider, device_name, index_of_status_type, response, delta):
+    def calculate_shots_num(self, year, month, day, device_type, device_provider, device_name, index_of_status_type, response, delta):
         """calculate the number of shots for each bucket
 
         Args:
@@ -108,7 +108,7 @@ class AmazonBraketlib:
 
         """
         self.s3_bucket_name_list = []
-        self.s3_bucket_folder_name_list = defaultdict(list)
+        self.s3_bucket_folder_name_list = {}
         self.s3_shot_count_dic = {}
         self.s3_count_id = {}
         self.total_shots_dic = {}
@@ -148,7 +148,7 @@ class AmazonBraketlib:
                 maxResults=100,
                 nextToken=next_token
             )
-            has_next_token = self.cal(year, month, day, device_type, device_provider,
+            has_next_token = self.calculate_shots_num(year, month, day, device_type, device_provider,
                                       device_name, index_of_status_type, response, delta)
 
             # 次のtokenがないなら, 終了
