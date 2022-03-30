@@ -1,0 +1,18 @@
+version: "2"
+services:
+  amazon-braket:
+    image: aws-amazon-braket
+    container_name: aws-braket-container
+    build:
+      context: ./
+      dockerfile: ./Dockerfile # production environment
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - JUPYTER_ENABLE_LAB=yes
+    volumes:
+      - ./aws-braket-jupyter:/home/braket/aws-braket-jupyter
+    ports:
+      - 8339:8889
+    restart: unless-stopped

@@ -29,10 +29,14 @@ shot数に応じてtaskを消去するlambda関数
 
 金額に応じてtaskを消去するlambda関数
 ### shot.py
+
 実行すると簡易なタスクを投げることができる。確認用。
 
 ### tutorial.ipynb
 手元でAmazonBraketLib を実行するチュートリアルコード
 
-詳細な設定方法はいかのドキュメントを参照してください。
+詳細な設定方法は以下のドキュメントを参照してください。
 https://braketmonitor-document.s3.ap-northeast-1.amazonaws.com/index.html
+
+### AWS Braket jupyter notebook Docker環境はこちら
+https://github.com/speed1313/aws-notebook-docker-env

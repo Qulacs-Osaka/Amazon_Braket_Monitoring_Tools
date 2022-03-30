@@ -25,7 +25,7 @@ def lambda_handler(event, context):
     today = datetime.now().date()
     today_date = str(prev_time).split('-')
     today_date_int = []
-    now_date = str(datetime.now().date())s
+    now_date = str(datetime.now().date())
     for i in today_date:
         today_date_int.append(int(i))
 
@@ -143,7 +143,7 @@ def lambda_handler(event, context):
 
     msg = str(new_dict)
     subject = 'Braket Monitor'
-    TOPIC_ARN = 'TOPIC_EXAPMLE'
+    TOPIC_ARN = 'TOPIC_EXAMPLE'
 
     response = client.publish(
         TopicArn=TOPIC_ARN,
