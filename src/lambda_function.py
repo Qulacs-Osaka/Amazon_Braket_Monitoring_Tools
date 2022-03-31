@@ -12,7 +12,7 @@ today_date_int: list = [
 #  task status ['QUEUED','COMPLETED','CANCELLED']
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, context: str):
     """Cancel all QUEUED tasks if total shots or cost is over the max value and send result message to the email.
 
     Args:
@@ -35,7 +35,7 @@ def lambda_handler(event, context):
     ama: list = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
 
     # price definition
-    price_per_task: int = 0.3
+    price_per_task: float = 0.3
     price_table: dict = {'d-wave': 0.00019, 'ionq': 0.01, 'rigetti': 0.00035}
 
     # device definition
@@ -63,7 +63,7 @@ def lambda_handler(event, context):
     shots_count_each_status: list = [0, 0, 0]
     task_count_each_status: list = [0, 0, 0]
 
-    result: str = ''
+    result: dict = {}
     for task_status_index in range(3):
         result = ama[device_region_index_dict[specific_device_provider]].get_info(
             *today_date_int, 'qpu', specific_device_provider, specific_device_name, task_status_index)

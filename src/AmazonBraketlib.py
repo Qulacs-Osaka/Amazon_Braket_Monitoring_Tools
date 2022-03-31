@@ -37,18 +37,18 @@ class AmazonBraketlib:
             str(count)+"at "+device+". Please keep care."
         return message
 
-    def make_markdown_from_list(self, str_time: str, target: list):
+    def make_markdown_from_list(self, time_str: str, target: list):
         """Make markdown-format string from target list
 
         Args:
-            str_time (str): time
+            time_str (str): time
             target_list (str):
 
         Returns:
             _type_: _description_
         """
         res_str = ""
-        res_str += str_time + "<br/>"
+        res_str += time_str + "<br/>"
         res_str += " ".join(target) + "<br/>"
         return res_str
 
