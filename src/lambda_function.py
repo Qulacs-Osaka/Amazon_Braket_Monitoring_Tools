@@ -59,7 +59,7 @@ def lambda_handler(event, context: str):
 
     price_each_status_index_dict: dict = {
         'QUEUED': 0, 'COMPLETED': 1, 'CANCELLED': 2}
-    price_each_status: list = [0, 0, 0]
+    price_each_status: list = [0]*len(price_each_status_index_dict)
     shots_count_each_status: list = [0, 0, 0]
     task_count_each_status: list = [0, 0, 0]
 
