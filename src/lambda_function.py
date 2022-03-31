@@ -1,4 +1,4 @@
-import boto3
+import boto3  # type:ignore
 from datetime import datetime, date, timedelta
 from AmazonBraketlib import AmazonBraketlib
 import logging
@@ -6,7 +6,8 @@ import logging
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-today_date_int = [date.today().year, date.today().month, date.today().day]
+today_date_int: list = [
+    date.today().year, date.today().month, date.today().day]
 
 #  task status ['QUEUED','COMPLETED','CANCELLED']
 
@@ -31,35 +32,38 @@ def lambda_handler(event, context):
     ama_us_west_1 = AmazonBraketlib('us-west-1')  # riggeti
     ama_us_west_2 = AmazonBraketlib('us-west-2')  # D-wave
     ama_us_east_1 = AmazonBraketlib('us-east-1')  # IonQ
-    ama = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
+    ama: list = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
 
     # price definition
-    price_per_task = 0.3
-    price_table = {'d-wave': 0.00019, 'ionq': 0.01, 'rigetti': 0.00035}
+    price_per_task: int = 0.3
+    price_table: dict = {'d-wave': 0.00019, 'ionq': 0.01, 'rigetti': 0.00035}
 
     # device definition
-    device_provider = ['d-wave', 'd-wave', 'ionq', 'rigetti']
-    device_name = ['DW_2000Q_6', 'Advantage_system4', 'ionQdevice', 'Aspen-11']
-    device_dict = {}
-    device_region_index_dict = {'d-wave': 1, 'rigetti': 0, 'ionq': 2, 'DW_2000Q_6': 1,
-                                'Advantage_system4': 2, 'ionQdevice': 1, 'Aspen-11': 0}
+    device_provider: list = ['d-wave', 'd-wave', 'ionq', 'rigetti']
+    device_name: list = ['DW_2000Q_6',
+                         'Advantage_system4', 'ionQdevice', 'Aspen-11']
+    device_dict: dict = {}
+    device_region_index_dict: dict = {'d-wave': 1, 'rigetti': 0, 'ionq': 2, 'DW_2000Q_6': 1,
+                                      'Advantage_system4': 2, 'ionQdevice': 1, 'Aspen-11': 0}
 
     for provider, device in zip(device_provider, device_name):
         device_dict[provider] = device
 
-    specific_device_provider = ''
-    specific_device_name = ''
+    specific_device_provider: str = ''
+    specific_device_name: str = ''
     for provider, device in zip(device_provider, device_name):
         if provider in event['detail']['deviceArn']:
             specific_device_provider = provider
             specific_device_name = device
             break
 
-    price_each_status = {}
-    shots_count_each_status = [0, 0, 0]
-    task_count_each_status = [0, 0, 0]
+    price_each_status_index_dict: dict = {
+        'QUEUED': 0, 'COMPLETED': 1, 'CANCELLED': 2}
+    price_each_status: list = [0, 0, 0]
+    shots_count_each_status: list = [0, 0, 0]
+    task_count_each_status: list = [0, 0, 0]
 
-    result = ''
+    result: str = ''
     for task_status_index in range(3):
         result = ama[device_region_index_dict[specific_device_provider]].get_info(
             *today_date_int, 'qpu', specific_device_provider, specific_device_name, task_status_index)
@@ -72,18 +76,13 @@ def lambda_handler(event, context):
                         result['id'][id_name])
 
     # Calculate the total cost of each state
-    price_each_status['QUEUED'] = shots_count_each_status[0] * \
-        price_table[specific_device_provider] + \
-        task_count_each_status[0]*price_per_task
-    price_each_status['COMPLETED'] = shots_count_each_status[1] * \
-        price_table[specific_device_provider] + \
-        task_count_each_status[1]*price_per_task
-    price_each_status['CANCELLED'] = shots_count_each_status[2] * \
-        price_table[specific_device_provider] + \
-        task_count_each_status[2]*price_per_task
+    for price_status in price_each_status_index_dict:
+        price_each_status[price_each_status_index_dict[price_status]] = shots_count_each_status[price_each_status_index_dict[price_status]] * \
+            price_table[specific_device_provider] + \
+            task_count_each_status[price_each_status_index_dict[price_status]]*price_per_task
 
     # set output json string values
-    lambda_output = {}
+    lambda_output: dict = {}
     lambda_output['date'] = result['date']
     lambda_output['qpu'] = result['qpu']
     lambda_output['QUEUED_shot_count'] = shots_count_each_status[0]
@@ -98,7 +97,7 @@ def lambda_handler(event, context):
 
     client = boto3.client('sns')
     msg = str(lambda_output)
-    subject = 'Braket Monitor'
+    subject: str = 'Braket Monitor'
     response = client.publish(
         TopicArn=TOPIC_ARN,
         Message=msg,
@@ -125,15 +124,15 @@ def delete_task_over_max_shot(
     Returns:
         result : TODO 削除したtask_id全て列挙
     """
-    task_info_list_each_status = []
-    num_of_shots_each_status = [0, 0, 0]
-    num_of_completed_shots = 0
+    task_info_each_status: list = []
+    num_of_shots_each_status: list = [0, 0, 0]
+    num_of_completed_shots: int = 0
 
     for task_status_index in range(3):
         task_info = ama[device_region_index_dict[device_provider]].get_info(
             *today_date_int, 'qpu', device_provider, device_name, index_of_status_type)
 
-        task_info_list_each_status.append(task_info)
+        task_info_each_status.append(task_info)
         num_of_shots_each_status[task_status_index] += task_info['total_shots']
 
     # for debug
@@ -145,11 +144,11 @@ def delete_task_over_max_shot(
 
     # 現在QUEUEDのshots合計が50以上なら, 全部のQUEUD taskを削除
     if sum(num_of_shots_each_status[0]) >= max_shot_num:
-        for bucket_name in task_info_list_each_status[0]['id']:
+        for bucket_name in task_info_each_status[0]['id']:
             # bucket_nameにはbucketとそのfolderの両方がtask_idsに代入されるため,
             # '/'があったら飛ばす(folderの中のtaskはとばす)
             if '/' not in bucket_name:
-                for task_id in task_info_list_each_status[0]['id'][bucket_name]:
+                for task_id in task_info_each_status[0]['id'][bucket_name]:
                     ama[device_region_index_dict[specific_device_name]
                         ].delete_quantumTask(task_id)
 
