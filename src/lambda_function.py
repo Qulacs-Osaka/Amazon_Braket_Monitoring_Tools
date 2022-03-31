@@ -109,7 +109,8 @@ def lambda_handler(event, context):
 
 
 def delete_task_over_max_shot(
-        max_shot_num, ama, device_region_index_dict, today_data_intyear, device_type, device_provider, device_name, index_of_status_type):
+        max_shot_num, ama, device_region_index_dict, today_data_intyear, device_type, device_provider, device_name, index_of_status_type, specific_device_provider, specific_device_name):
+    # specific_device_*が分けた結果未定義だったので引数に入れています．
     """delete QUEUED task according to the number of shots
     Args:
         max_shot_num :
@@ -155,7 +156,7 @@ def delete_task_over_max_shot(
 
 def delete_task_over_max_cost(
         max_cost, ama, device_region_index_dict, today_data_intyear, device_type, device_provider, device_name,
-        index_of_status_type):
+        index_of_status_type, specific_device_provider, specific_device_name):
     """Delete QUEUD task accordingly when the maximum cost is exceeded
     Args:
         max_cost :
@@ -167,7 +168,7 @@ def delete_task_over_max_cost(
         device_name :
         index_of_status_type :
     Returns:
-        result : 削除したtask_id 全列挙s
+        result : 削除したtask_id 全列挙
     """
 
     # TODO
