@@ -52,7 +52,7 @@ class AmazonBraketlib:
         res_str += " ".join(target) + "<br/>"
         return res_str
 
-    def calculate_shots_num(self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str, index_of_status_type: int, response, delta) -> bool:
+    def calculate_shots_num(self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str, index_of_status_type: int, response: dict[str, dict], delta: timedelta) -> bool:
         """calculate the number of shots for each bucket
 
         Args:
@@ -126,7 +126,7 @@ class AmazonBraketlib:
         for I in self.target_name:
             self.total_shots[I] = 0
         # 指定した日付とタスクの日付の差の上限
-        delta = timedelta(seconds=60)
+        delta: timedelta = timedelta(seconds=60)
         # 調べるdeviceの名前を指定
         device_name = 'device'+'/'+device_type+'/'+device_provider+'/'+device_name
         # Array of SearchQuantumTasksFilter objects.
@@ -172,7 +172,7 @@ class AmazonBraketlib:
                 'date': str(year)+'-'+str(month)+'-'+str(day)
                 }
 
-    def delete_quantumTask(self, quantumTaskArn_name: str) -> dict[str, str]:
+    def delete_quantumTask(self, quantumTaskArn_name: str) -> dict[str, dict]:
         """delete specific quantumTask
         Args:
             quantumTaskArn_name (_type_): _description_
