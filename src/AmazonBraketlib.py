@@ -5,11 +5,10 @@ from datetime import datetime, date, timedelta
 
 class AmazonBraketlib:
 
-    def __init__(self, region: str = "us-east-1", clientToken: str = ''):
+    def __init__(self, region: str = "us-east-1"):
         """Initialize configuration of braket client and some data
         Args:
             region: The AWS Region
-            clientToken: client Token(aws_access_key_id)
         """
         # store bucket name
         self.s3_bucket_name: list = []
@@ -21,7 +20,6 @@ class AmazonBraketlib:
         self.target_name: list = [
             'QUEUED', 'COMPLETED', 'CANCELLED', 'RUNNING']
         self.region: str = region
-        self.clientToken: str = clientToken
         self.braket = boto3.client('braket', region_name=self.region)
 
     def message_maker(self, date: int, time: int, device: str, count: int):
@@ -65,8 +63,7 @@ class AmazonBraketlib:
         for task in response['quantumTasks']:
             # Returns False if the data is not the given date
             if task['status'] == self.target_name[index_of_status_type] and task['createdAt'].date() == date(year, month, day):
-                self.total_shots[self.target_name[index_of_status_type]
-                                 ] += task['shots']
+                self.total_shots[self.target_name[index_of_status_type]] += task['shots']
 
                 # output s3 information is like this
                 # 'count': {'amazon-braket-issa': 8100,
@@ -138,10 +135,6 @@ class AmazonBraketlib:
             },
         ]
         # search_quantum_tasksは, json形式のstrを返し, "nextToken":次のタスクのトークン と "quantumTasks":filterにマッチしたタスクのarrayオブジェクトが返される.
-        response = self.braket.search_quantum_tasks(
-            filters=own_filters,
-            maxResults=100
-        )
         # 1回目のnext_tokenはnullにしておく. すると先頭からsearchしてくれる.
         next_token = ''
         # taskが存在するかのフラグ
@@ -178,6 +171,5 @@ class AmazonBraketlib:
         Returns:
             _type_: _description_
         """
-        response = self.braket.cancel_quantum_task(
-            clientToken=self.clientToken, quantumTaskArn=quantumTaskArn_name)
+        response = self.braket.cancel_quantum_task(quantumTaskArn=quantumTaskArn_name)
         return response
