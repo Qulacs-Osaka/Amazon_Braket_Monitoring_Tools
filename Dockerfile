@@ -1,4 +1,4 @@
-FROM python:3.8.2-buster
+FROM python:3.9-buster
 MAINTAINER Sergio Martinez-Losa
 
 ENV DEBIAN_FRONTEND noninteractive

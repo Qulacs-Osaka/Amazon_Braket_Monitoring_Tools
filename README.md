@@ -6,7 +6,8 @@ Tools to monitor Amazon Braket
 ## AmazonBraketlib class
 Braket taskを監視・削除する基本メソッドが含まれたクラス.
 
-### AmazonBraketlibの主なメソッド
+AmazonBraketlibの主なメソッド
+
 - get_info(year, month, day, device_type, device_provider, device_name, index_of_status_type)
 指定した日付の指定したデバイスのタスクに関する情報をjson形式で出力する.
 出力されるjson文字列の例は以下の通り
@@ -37,8 +38,21 @@ shot数に応じてtaskを消去するlambda関数
 ### tutorial.ipynb
 手元でAmazonBraketLib を実行するチュートリアルコード
 
+## コンテナ環境
+
+本リポジトリのDockerfile, docker-compose.ymlで作成されるコンテナは, AWSのconfig, credentialsファイルが含まれる ~/.aws/ と Amazon_Braket_Monitoring_Tools/src/ をvolumeで共有しています.
+詳しくは[aws-notebook-docker-env](https://github.com/speed1313/aws-notebook-docker-env)を参照してください.
+
+- コンテナ立ち上げ and login 方法
+```
+~/Amazon_Braket_Monitoring_Tools$ docker-compose up --build
+$ docker exec -it  [コンテナ名] /bin/bash
+```
+
 詳細な設定方法は以下のドキュメントを参照してください。
 https://braketmonitor-document.s3.ap-northeast-1.amazonaws.com/index.html
 
+
+
 ### AWS Braket jupyter notebook Docker環境はこちら
-https://github.com/speed1313/aws-notebook-docker-env
+
