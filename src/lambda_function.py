@@ -1,6 +1,5 @@
-from cmath import log
 import boto3  # type:ignore
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from AmazonBraketlib import AmazonBraketlib
 import json
 import urllib.request
@@ -11,13 +10,11 @@ import logging
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-today_date_int: list[int] = [
-    date.today().year, date.today().month, date.today().day]
 
 #  task status ['QUEUED','COMPLETED','CANCELLED']
 
 
-def lambda_handler(event, context: str) -> dict:
+def lambda_handler(event: dict, context: dict) -> dict:
     """Cancel all QUEUED tasks if total shots or cost is over the max value and send result message to the email.
 
     Args:
@@ -36,39 +33,61 @@ def lambda_handler(event, context: str) -> dict:
     ama_us_west_1 = AmazonBraketlib("us-west-1")  # riggeti
     ama_us_west_2 = AmazonBraketlib("us-west-2")  # D-wave
     ama_us_east_1 = AmazonBraketlib("us-east-1")  # IonQ
-    ama: list = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
-
-    today_date_int = [date.today().year, date.today().month, date.today().day]
-
+    clients: list = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
 
     # device definition
-    device_provider: list[str] = ['d-wave', 'd-wave', 'ionq', 'rigetti']
-    device_name: list[str] = ['DW_2000Q_6',
-                         'Advantage_system4', 'ionQdevice', 'Aspen-11']
-    device_dict: dict[str,str] = {}
-    device_region_index_dict: dict[str,int] = {'d-wave': 1, 'rigetti': 0, 'ionq': 2, 'DW_2000Q_6': 1,
-                                      'Advantage_system4': 1, 'ionQdevice': 2, 'Aspen-11': 0}
+    device_providers: list[str] = ['d-wave', 'd-wave', 'ionq', 'rigetti']
+    device_names: list[str] = ['DW_2000Q_6',
+                               'Advantage_system4', 'ionQdevice', 'Aspen-11', 'Aspen-M-1']
+    device_region_index_dict: dict[str, int] = {'d-wave': 1, 'rigetti': 0, 'ionq': 2,
+                                                'DW_2000Q_6': 1, 'Advantage_system4': 1, 'ionQdevice': 2, 'Aspen-11': 0, 'Aspen-M-1': 0}
 
-    for provider, device in zip(device_provider, device_name):
-        device_dict[provider] = device
-
-    specific_device_provider: str = ''
-    specific_device_name: str = ''
-    for provider, device in zip(device_provider, device_name):
-        if provider in event['detail']['deviceArn']:
-            specific_device_provider = provider
-            specific_device_name = device
-            break
-
-    shots_count_each_status: list[int] = [0, 0, 0]
-    task_count_each_status: list[int] = [0, 0, 0]
+    # setting device of Tasks that have now changed the status
+    device_provider: str
+    device_name: str
+    is_known_device: bool
+    (device_provider, device_name, is_known_device) = set_device_info(device_providers, device_names, event)
+    if is_known_device == False:
+        post_slack("error: unknown_device", " ", SLACK_POST_URL)
+        return {"error": "unkown device"}
 
     # store task results for each status to result dictionary
-    task_info_each_status: list=[]
+    shots_count_each_status: list[int] = [0, 0, 0]
+    task_count_each_status: list[int] = [0, 0, 0]
+    task_info_each_status: list = []
     result: dict = {}
+    (shots_count_each_status, task_count_each_status, task_info_each_status, result) = set_task_results(clients,device_region_index_dict,device_provider, device_name,)
+
+    # set output json string values
+    lambda_output: dict = {}
+    lambda_output = set_lambda_output(lambda_output, result, shots_count_each_status, task_count_each_status)
+
+    device_type = "qpu"
+    deleted_result: dict = delete_task_over_max_shot(
+        MAX_SHOT_NUM, clients, device_region_index_dict, device_type, device_provider,
+        device_name, shots_count_each_status, task_info_each_status)
+
+    #send_email(lambda_output, TOPIC_ARN)
+    post_slack(lambda_output, deleted_result, SLACK_POST_URL)
+
+    return lambda_output
+
+
+def set_task_results(
+        clients:list, device_region_index_dict: dict, device_provider, device_name) -> tuple[
+        list[int],
+        list[int],
+        list, dict]:
+    # store task results for each status to result dictionary
+    shots_count_each_status: list[int] = [0, 0, 0]
+    task_count_each_status: list[int] = [0, 0, 0]
+    task_info_each_status: list = []
+    result: dict = {}
+    today_date = [date.today().year, date.today().month, date.today().day]
+
     for task_status_index in range(3):
-        result = ama[device_region_index_dict[specific_device_provider]].get_info(
-            *today_date_int, 'qpu', specific_device_provider, specific_device_name, task_status_index)
+        result = clients[device_region_index_dict[device_provider]].get_info(
+            *today_date, 'qpu', device_provider, device_name, task_status_index)
         task_info_each_status.append(result)
 
         shots_count_each_status[task_status_index] += result['total_shots']
@@ -78,10 +97,32 @@ def lambda_handler(event, context: str) -> dict:
                 if not '/' in id_name:
                     task_count_each_status[task_status_index] += len(
                         result['id'][id_name])
+    return (shots_count_each_status, task_count_each_status, task_info_each_status, result)
 
 
-    # set output json string values
-    lambda_output: dict = {}
+def set_device_info(device_providers, device_names, event) -> tuple[str, str, bool]:
+    # setting device of Tasks that have now changed the status
+    device_dict: dict[str, str] = {}
+    for provider, device in zip(device_providers, device_names):
+        device_dict[provider] = device
+    device_provider: str = ''
+    device_name: str = ''
+    is_known_device = False
+    for provider, device in zip(device_providers, device_names):
+        if provider in event['detail']['deviceArn']:
+            device_provider = provider
+            if device in event['detail']['deviceArn']:
+                device_name = device
+                is_known_device = True
+                return (device_provider, device_name, is_known_device)
+
+    return ("", "", False)
+
+
+def set_lambda_output(
+        lambda_output: dict, result: dict, shots_count_each_status: list[int],
+        task_count_each_status: list[int]) -> dict:
+    # set lambda_output in json string type
     lambda_output['date'] = result['date']
     lambda_output['qpu'] = result['qpu']
     lambda_output['QUEUED_shot_count'] = shots_count_each_status[0]
@@ -91,29 +132,18 @@ def lambda_handler(event, context: str) -> dict:
     lambda_output['CANCELLED_shot_count'] = shots_count_each_status[2]
     lambda_output['CANCELLED_task_count'] = task_count_each_status[2]
 
-    # print(lambda_output)
-    # print(price_each_status)
-
-
-
-    device_type="qpu"
-    deleted_result=delete_task_over_max_shot(
-        MAX_SHOT_NUM, ama, device_region_index_dict, today_date_int, device_type, specific_device_provider,
-        specific_device_name, shots_count_each_status, task_info_each_status)
-
-    #send_email(lambda_output, TOPIC_ARN)
-    post_slack(lambda_output,deleted_result, SLACK_POST_URL)
-
     return lambda_output
 
 
-def delete_task_over_max_shot(max_shot_num:int, ama:list, device_region_index_dict:dict, today_data_intyear;int, device_type:str, device_provider:str, device_name:str,shots_count_each_status:list[int],task_info_each_status:list[dict]):
+def delete_task_over_max_shot(
+        max_shot_num: int, clients: list, device_region_index_dict: dict, device_type: str, device_provider: str,
+        device_name: str, shots_count_each_status: list[int],
+        task_info_each_status: list[dict]):
     """delete QUEUED task according to the number of shots
     Args:
         max_shot_num :
-        ama :
+        clients :
         device_region_index_dict :
-        today_data_intyear :
         device_type :
         device_provider :
         device_name :
@@ -121,7 +151,6 @@ def delete_task_over_max_shot(max_shot_num:int, ama:list, device_region_index_di
     Returns:
         result : TODO 削除したtask_id全て列挙
     """
-
 
     # for debug
     print(
@@ -138,18 +167,19 @@ def delete_task_over_max_shot(max_shot_num:int, ama:list, device_region_index_di
             # '/'があったら飛ばす(folderの中のtaskはとばす)
             if '/' not in bucket_name:
                 for task_id in task_info_each_status[0]['id'][bucket_name]:
-                    deleted_result.append(ama[device_region_index_dict[device_name]].delete_quantumTask(task_id))
+                    deleted_result.append(clients[device_region_index_dict[device_name]].delete_quantumTask(task_id))
         return deleted_result
 
 
 def delete_task_over_max_cost(
-max_cost: int, ama: list, device_region_index_dict: dict, today_data_intyear:int, device_type:str, device_provider:str, device_name:str, shots_count_each_status:list[int], task_info_each_status:list[dict]):
+        max_cost: int, clients: list, device_region_index_dict: dict, device_type: str,
+        device_provider: str, device_name: str, shots_count_each_status: list[int],
+        task_info_each_status: list[dict], task_count_each_status: list[int]):
     """Delete QUEUD task accordingly when the maximum cost is exceeded
     Args:
         max_cost :
-        ama :
+        clients :
         device_region_index_dict :
-        today_data_intyear :
         device_type :
         device_provider :
         device_name :
@@ -186,11 +216,11 @@ max_cost: int, ama: list, device_region_index_dict: dict, today_data_intyear:int
             # '/'があったら飛ばす(folderの中のtaskはとばす)
             if '/' not in bucket_name:
                 for task_id in task_info_each_status[0]['id'][bucket_name]:
-                    deleted_result.append(ama[device_region_index_dict[device_name]].delete_quantumTask(task_id))
+                    deleted_result.append(clients[device_region_index_dict[device_name]].delete_quantumTask(task_id))
     return deleted_result
 
 
-def send_email(lambda_output,TOPIC_ARN):
+def send_email(lambda_output, TOPIC_ARN):
     client = boto3.client('sns')
     msg = str(lambda_output)
     subject: str = 'Braket Monitor'
@@ -200,7 +230,8 @@ def send_email(lambda_output,TOPIC_ARN):
         Subject=subject
     )
 
-def post_slack(lambda_output,deleted_result,slack_post_url):
+
+def post_slack(lambda_output, deleted_result, slack_post_url):
 
     # 設定
 
@@ -214,8 +245,8 @@ def post_slack(lambda_output,deleted_result,slack_post_url):
     current_time = now.strftime("%Y/%m/%d %H:%M:%S")
     operation_message = "Task Information" + " " + current_time + "\n"
     detail_info = str(lambda_output)
-    delete_message="delete task result\n"+str(deleted_result)
-    message =operation_message + detail_info+"\n"+delete_message
+    delete_message = "delete task result\n"+str(deleted_result)
+    message = operation_message + detail_info+"\n"+delete_message
     send_data = {
         "username": username,
         "icon_emoji": icom,
@@ -234,4 +265,3 @@ def post_slack(lambda_output,deleted_result,slack_post_url):
         response_body = response.read().decode('utf-8')
 
     return response_body
-

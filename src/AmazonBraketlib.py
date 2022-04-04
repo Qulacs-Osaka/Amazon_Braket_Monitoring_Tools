@@ -1,6 +1,6 @@
 import boto3  # type:ignore
 from collections import defaultdict
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 
 
 class AmazonBraketlib:
@@ -50,7 +50,10 @@ class AmazonBraketlib:
         res_str += " ".join(target) + "<br/>"
         return res_str
 
-    def calculate_shots_num(self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str, index_of_status_type: int, response: dict[str, dict], delta: timedelta) -> bool:
+    def calculate_shots_num(
+            self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str,
+            index_of_status_type: int, response: dict[str, dict],
+            delta: timedelta) -> bool:
         """calculate the number of shots for each bucket
 
         Args:
@@ -96,7 +99,9 @@ class AmazonBraketlib:
                 return False
         return True
 
-    def get_info(self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str, index_of_status_type: int) -> dict:
+    def get_info(
+            self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str,
+            index_of_status_type: int) -> dict:
         """Get task information for a specific device on a specific date
 
         Args:
