@@ -12,19 +12,19 @@ class AmazonBraketlib:
             clientToken: client Token(aws_access_key_id)
         """
         # store bucket name
-        self.s3_bucket_name: list = []
+        self.s3_bucket_name: list[str] = []
         # store folder name
         self.s3_bucket_folder_name: defaultdict = defaultdict(list)
-        self.total_shots: dict = {}
-        self.s3_shot_count: dict = {}
-        self.s3_count_id: dict = {}
-        self.target_name: list = [
+        self.total_shots: dict[str, int] = {}
+        self.s3_shot_count: dict[str, int] = {}
+        self.s3_count_id: dict[str, list[str]] = {}
+        self.target_name: list[str] = [
             'QUEUED', 'COMPLETED', 'CANCELLED', 'RUNNING']
         self.region: str = region
         self.clientToken: str = clientToken
         self.braket = boto3.client('braket', region_name=self.region)
 
-    def message_maker(self, date: int, time: int, device: str, count: int):
+    def message_maker(self, date: int, time: int, device: str, count: int) -> str:
         """Make a warning message
 
         Args:
@@ -33,11 +33,11 @@ class AmazonBraketlib:
             device:
             count:
         """
-        message = "At "+str(date)+str(time)+" "+"I detected increaning by " + \
+        message: str = "At "+str(date)+str(time)+" "+"I detected increaning by " + \
             str(count)+"at "+device+". Please keep care."
         return message
 
-    def make_markdown_from_list(self, time_str: str, target: list):
+    def make_markdown_from_list(self, time_str: str, target: list) -> str:
         """Make markdown-format string from target list
 
         Args:
@@ -52,7 +52,7 @@ class AmazonBraketlib:
         res_str += " ".join(target) + "<br/>"
         return res_str
 
-    def calculate_shots_num(self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str, index_of_status_type: int, response, delta):
+    def calculate_shots_num(self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str, index_of_status_type: int, response, delta) -> bool:
         """calculate the number of shots for each bucket
 
         Args:
@@ -94,10 +94,12 @@ class AmazonBraketlib:
                     self.s3_count_id[bucket_name] = []
                 self.s3_shot_count[bucket_name] += task['shots']
                 self.s3_count_id[bucket_name].append(task['quantumTaskArn'])
+                return True
             elif (date(year, month, day) - task['createdAt'].date() > delta) == True:
                 return False
+        return True
 
-    def get_info(self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str, index_of_status_type: int):
+    def get_info(self, year: int, month: int, day: int, device_type: str, device_provider: str, device_name: str, index_of_status_type: int) -> dict:
         """Get task information for a specific device on a specific date
 
         Args:
@@ -143,9 +145,9 @@ class AmazonBraketlib:
             maxResults=100
         )
         # 1回目のnext_tokenはnullにしておく. すると先頭からsearchしてくれる.
-        next_token = ''
+        next_token: str = ''
         # taskが存在するかのフラグ
-        has_next_token = True
+        has_next_token: bool = True
 
         # 再帰的にtaskを検索. 毎回maxResults分のタスクを取ってくる.
         while has_next_token:
@@ -170,7 +172,7 @@ class AmazonBraketlib:
                 'date': str(year)+'-'+str(month)+'-'+str(day)
                 }
 
-    def delete_quantumTask(self, quantumTaskArn_name):
+    def delete_quantumTask(self, quantumTaskArn_name: str) -> dict[str, str]:
         """delete specific quantumTask
         Args:
             quantumTaskArn_name (_type_): _description_

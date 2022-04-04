@@ -1,3 +1,4 @@
+from cmath import log
 import boto3  # type:ignore
 from datetime import datetime, date, timedelta
 from AmazonBraketlib import AmazonBraketlib
@@ -6,13 +7,13 @@ import logging
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-today_date_int: list = [
+today_date_int: list[int] = [
     date.today().year, date.today().month, date.today().day]
 
 #  task status ['QUEUED','COMPLETED','CANCELLED']
 
 
-def lambda_handler(event, context: str):
+def lambda_handler(event, context: str) -> dict:
     """Cancel all QUEUED tasks if total shots or cost is over the max value and send result message to the email.
 
     Args:
@@ -36,15 +37,16 @@ def lambda_handler(event, context: str):
 
     # price definition
     price_per_task: float = 0.3
-    price_table: dict = {'d-wave': 0.00019, 'ionq': 0.01, 'rigetti': 0.00035}
+    price_table: dict[str, float] = {
+        'd-wave': 0.00019, 'ionq': 0.01, 'rigetti': 0.00035}
 
     # device definition
-    device_provider: list = ['d-wave', 'd-wave', 'ionq', 'rigetti']
-    device_name: list = ['DW_2000Q_6',
-                         'Advantage_system4', 'ionQdevice', 'Aspen-11']
-    device_dict: dict = {}
-    device_region_index_dict: dict = {'d-wave': 1, 'rigetti': 0, 'ionq': 2, 'DW_2000Q_6': 1,
-                                      'Advantage_system4': 2, 'ionQdevice': 1, 'Aspen-11': 0}
+    device_provider: list[str] = ['d-wave', 'd-wave', 'ionq', 'rigetti']
+    device_name: list[str] = ['DW_2000Q_6',
+                              'Advantage_system4', 'ionQdevice', 'Aspen-11']
+    device_dict: dict[str, str] = {}
+    device_region_index_dict: dict[str, int] = {'d-wave': 1, 'rigetti': 0, 'ionq': 2, 'DW_2000Q_6': 1,
+                                                'Advantage_system4': 2, 'ionQdevice': 1, 'Aspen-11': 0}
 
     for provider, device in zip(device_provider, device_name):
         device_dict[provider] = device
@@ -57,11 +59,11 @@ def lambda_handler(event, context: str):
             specific_device_name = device
             break
 
-    price_each_status_index_dict: dict = {
+    price_each_status_index_dict: dict[str, int] = {
         'QUEUED': 0, 'COMPLETED': 1, 'CANCELLED': 2}
-    price_each_status: list = [0]*len(price_each_status_index_dict)
-    shots_count_each_status: list = [0, 0, 0]
-    task_count_each_status: list = [0, 0, 0]
+    price_each_status: list[float] = [0]*len(price_each_status_index_dict)
+    shots_count_each_status: list[int] = [0, 0, 0]
+    task_count_each_status: list[int] = [0, 0, 0]
 
     result: dict = {}
     for task_status_index in range(3):
@@ -108,7 +110,7 @@ def lambda_handler(event, context: str):
 
 
 def delete_task_over_max_shot(
-        max_shot_num, ama, device_region_index_dict, today_data_intyear, device_type, device_provider, device_name, index_of_status_type, specific_device_provider, specific_device_name):
+        max_shot_num: int, ama: list, device_region_index_dict: dict, today_data_intyear: int, device_type: str, device_provider: str, device_name: str, index_of_status_type: int, specific_device_provider: str, specific_device_name: str):
     # specific_device_*が分けた結果未定義だったので引数に入れています．
     """delete QUEUED task according to the number of shots
     Args:
@@ -124,7 +126,7 @@ def delete_task_over_max_shot(
     Returns:
         result : TODO 削除したtask_id全て列挙
     """
-    task_info_each_status: list = []
+    task_info_each_status: list[dict] = []
     num_of_shots_each_status: list = [0, 0, 0]
     num_of_completed_shots: int = 0
 
@@ -154,8 +156,8 @@ def delete_task_over_max_shot(
 
 
 def delete_task_over_max_cost(
-        max_cost, ama, device_region_index_dict, today_data_intyear, device_type, device_provider, device_name,
-        index_of_status_type, specific_device_provider, specific_device_name):
+        max_cost: int, ama: list, device_region_index_dict: dict, today_data_intyear: int, device_type: str, device_provider: str, device_name: str,
+        index_of_status_type: int, specific_device_provider: str, specific_device_name: str):
     """Delete QUEUD task accordingly when the maximum cost is exceeded
     Args:
         max_cost :
