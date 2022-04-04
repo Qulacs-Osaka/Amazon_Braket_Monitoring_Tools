@@ -24,9 +24,9 @@ Braket taskを監視・削除する基本メソッドが含まれたクラス.
 QUEUED状態の指定したタスクをキャンセルできる.
 ## lambda_fucntion.py
 
+- delete_task_over_max_shot()
 shot数に応じてtaskを消去するlambda関数
-## lambda_function_money.py
-
+- delete_task_over_max_cost()
 金額に応じてtaskを消去するlambda関数
 
 ## Example
