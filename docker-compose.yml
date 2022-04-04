@@ -12,7 +12,8 @@ services:
       - TZ=Europe/London
       - JUPYTER_ENABLE_LAB=yes
     volumes:
-      - ./aws-braket-jupyter:/home/braket/aws-braket-jupyter
+      - ./src:/home/braket/src
+      - $HOME/.aws/:/home/braket/.aws/:ro
     ports:
       - 8339:8889
     restart: unless-stopped

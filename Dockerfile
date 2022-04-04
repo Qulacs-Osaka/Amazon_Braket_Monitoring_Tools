@@ -44,6 +44,6 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $BRAKET_USER
 
 # RUN JUPYTER ON PORT 8889
-CMD [ "jupyter" , "notebook",  "--ip=0.0.0.0", "--port=8889", "--notebook-dir=./aws-braket-jupyter", "--no-browser" ]
-
+#CMD [ "jupyter" , "notebook",  "--ip=0.0.0.0", "--port=8889", "--notebook-dir=./aws-braket-jupyter", "--no-browser" ]
+CMD ["/bin/bash"]
 # Get the jupyter token : docker logs -f <NAME_OF_THIS_IMAGE>
