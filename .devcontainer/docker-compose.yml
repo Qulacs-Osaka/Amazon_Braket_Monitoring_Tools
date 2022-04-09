@@ -1,0 +1,29 @@
+version: "3"
+services:
+  amazon-braket:
+    image: aws-amazon-braket
+    container_name: aws-braket-container
+    build:
+      context: ./
+      dockerfile: ./Dockerfile # production environment
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - JUPYTER_ENABLE_LAB=yes
+      - AWS_PROFILE=sample # profile name
+      - BOTO_CONFIG= /home/braket/.aws # location of config file
+      - AWS_SHARED_CREDENTIALS_FILE=/home/braket/.aws/credentials # location of credentials file
+      - AWS_DEFAULT_REGION=us-east-1 # region name
+    volumes:
+      - ../:/home/braket/workspace
+      - $HOME/.aws/:/home/braket/.aws/:ro
+    ports:
+      - 8339:8889
+    # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
+    # cap_add:
+    #   - SYS_PTRACE
+    # security_opt:
+    #   - seccomp:unconfined
+
+    command: /bin/sh -c "while sleep 1000; do :; done"
