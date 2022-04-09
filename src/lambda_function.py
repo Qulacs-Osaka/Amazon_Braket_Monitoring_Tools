@@ -312,7 +312,7 @@ def post_slack(lambda_output, deleted_result, slack_post_url,event,context):
 
     detail_info = str(lambda_output)
     delete_message = "delete task result\n" + str(deleted_result)
-    message = operation_message + "\n" + "today's tasks information:\n"+ detail_info + "\n" + delete_message
+    message = operation_message + "\n" + "triggered task information:\n"+ detail_info + "\n" + delete_message
     send_data = {
         "username": username,
         "icon_emoji": icom,
