@@ -36,7 +36,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
     clients: list = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
 
     # device definition
-    device_providers: list[str] = ["d-wave", "d-wave", "ionq", "rigetti"]
+    device_providers: list[str] = ["d-wave", "d-wave", "ionq", "rigetti","rigetti"]
     device_names: list[str] = [
         "DW_2000Q_6",
         "Advantage_system4",
@@ -102,7 +102,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
     )
 
     # send_email(lambda_output, TOPIC_ARN)
-    post_slack(lambda_output, deleted_result, SLACK_POST_URL)
+    post_slack(lambda_output, deleted_result, SLACK_POST_URL,event,context)
 
     return lambda_output
 
@@ -296,7 +296,7 @@ def send_email(lambda_output, TOPIC_ARN):
     response = client.publish(TopicArn=TOPIC_ARN, Message=msg, Subject=subject)
 
 
-def post_slack(lambda_output, deleted_result, slack_post_url):
+def post_slack(lambda_output, deleted_result, slack_post_url,event,context):
 
     # 設定
 
@@ -308,10 +308,11 @@ def post_slack(lambda_output, deleted_result, slack_post_url):
     # メッセージの内容
     now = datetime.now()
     current_time = now.strftime("%Y/%m/%d %H:%M:%S")
-    operation_message = "Task Information" + " " + current_time + "\n"
+    operation_message = "Task Information" + " " + current_time + "\n" + "from Lambda function ARN:" + context.invoked_function_arn + "\n" + "triggered event: \n" + str(event["detail"])
+
     detail_info = str(lambda_output)
     delete_message = "delete task result\n" + str(deleted_result)
-    message = operation_message + detail_info + "\n" + delete_message
+    message = operation_message + "\n" + "today's tasks information:\n"+ detail_info + "\n" + delete_message
     send_data = {
         "username": username,
         "icon_emoji": icom,

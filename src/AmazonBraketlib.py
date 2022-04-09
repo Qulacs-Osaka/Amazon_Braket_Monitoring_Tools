@@ -171,6 +171,9 @@ class AmazonBraketlib:
             response = self.braket.search_quantum_tasks(
                 filters=own_filters, maxResults=100, nextToken=next_token
             )
+            if response["quantumTasks"]==[]:
+                has_next_token=False
+                break
             has_next_token = self.calculate_shots_num(
                 year,
                 month,
