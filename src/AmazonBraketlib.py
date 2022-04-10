@@ -57,7 +57,7 @@ class AmazonBraketlib:
         res_str += " ".join(target) + "<br/>"
         return res_str
 
-    def calculate_shots_num(
+    def __calculate_shots_num(
         self,
         year: int,
         month: int,
@@ -174,7 +174,7 @@ class AmazonBraketlib:
             if response["quantumTasks"]==[]:
                 has_next_token=False
                 break
-            has_next_token = self.calculate_shots_num(
+            has_next_token = self.__calculate_shots_num(
                 year,
                 month,
                 day,

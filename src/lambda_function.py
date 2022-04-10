@@ -4,6 +4,7 @@ from AmazonBraketlib import AmazonBraketlib
 import json
 import urllib.request
 from datetime import datetime
+import os
 
 import logging
 
@@ -24,7 +25,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
     Returns:
         (str): json-format string
     """
-    SLACK_POST_URL = ""
+    SLACK_POST_URL = os.environ['SLACK_POST_URL']
     MAX_SHOT_NUM = 50
     MAX_SHOT_COST = 5  # dollar
 
@@ -275,7 +276,7 @@ def delete_task_over_max_cost(
         end="",
     )
 
-    # 現在QUEUEDのshots合計が50以上なら, 全部のQUEUD taskを削除
+    # 現在QUEUEDのshots合計が50以上なら, 全部のQUEUED taskを削除
     deleted_result = []
     if price_each_status[0] >= max_cost:
         for bucket_name in task_info_each_status[0]["id"]:
