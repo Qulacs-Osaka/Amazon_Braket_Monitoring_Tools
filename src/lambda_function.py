@@ -25,16 +25,18 @@ def lambda_handler(event: dict, context: dict) -> dict:
     Returns:
         (str): json-format string
     """
-    SLACK_POST_URL = os.environ['SLACK_POST_URL']
-    CLIENT_TOKEN = os.environ['CLIENT_TOKEN']
+    # 定数設定
+    SLACK_POST_URL = os.environ["SLACK_POST_URL"]
+    CLIENT_TOKEN = os.environ["CLIENT_TOKEN"]
     MAX_SHOT_NUM = 50
     MAX_SHOT_COST = 5  # dollar
 
     logger.info(event)
+
     # set boto user
-    ama_us_west_1 = AmazonBraketlib("us-west-1",CLIENT_TOKEN)  # riggeti
-    ama_us_west_2 = AmazonBraketlib("us-west-2",CLIENT_TOKEN)  # D-wave
-    ama_us_east_1 = AmazonBraketlib("us-east-1",CLIENT_TOKEN)  # IonQ
+    ama_us_west_1 = AmazonBraketlib("us-west-1", CLIENT_TOKEN)  # riggeti
+    ama_us_west_2 = AmazonBraketlib("us-west-2", CLIENT_TOKEN)  # D-wave
+    ama_us_east_1 = AmazonBraketlib("us-east-1", CLIENT_TOKEN)  # IonQ
     clients: list = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
 
     # device definition
@@ -65,7 +67,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
         device_providers, device_names, event
     )
     if is_known_device == False:
-        post_slack("error: unknown_device", " ", SLACK_POST_URL,event,context)
+        post_slack("error: unknown_device", " ", SLACK_POST_URL, event, context)
         return {"error": "unkown device"}
 
     # store task results for each status to result dictionary
@@ -73,7 +75,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
     task_count_each_status: list[int] = [0, 0, 0]
     task_info_each_status: list = []
     result: dict = {}
-    deviceArn :str = event["detail"]["deviceArn"]
+    deviceArn: str = event["detail"]["deviceArn"]
     (
         shots_count_each_status,
         task_count_each_status,
@@ -86,7 +88,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
         clients,
         device_region_index_dict,
         device_provider,
-        deviceArn
+        deviceArn,
     )
 
     # set output json string values
@@ -105,20 +107,31 @@ def lambda_handler(event: dict, context: dict) -> dict:
         task_info_each_status,
     )
 
+    # deleted_result: dict = delete_task_over_max_cost(
+    #    MAX_SHOT_COST,
+    #    clients,
+    #    device_region_index_dict,
+    #    device_provider,
+    #    device_name,
+    #    shots_count_each_status,
+    #    task_info_each_status,
+    #    task_count_each_status,
+    # )
+
     # send_email(lambda_output, TOPIC_ARN)
-    post_slack(lambda_output, deleted_result, SLACK_POST_URL,event,context)
+    post_slack(lambda_output, deleted_result, SLACK_POST_URL, event, context)
 
     return lambda_output
 
 
 def set_task_results(
-        shots_count_each_status: list[int],
-        task_count_each_status: list[int],
-        task_info_each_status: list,
-        clients: list,
-        device_region_index_dict: dict,
-        device_provider: str,
-        deviceArn: str
+    shots_count_each_status: list[int],
+    task_count_each_status: list[int],
+    task_info_each_status: list,
+    clients: list,
+    device_region_index_dict: dict,
+    device_provider: str,
+    deviceArn: str,
 ) -> tuple[list[int], list[int], list, dict]:
     # store task results for each status to result dictionary
 
@@ -224,7 +237,9 @@ def delete_task_over_max_shot(
             if "/" not in bucket_name:
                 for task_id in task_info_each_status[0]["id"][bucket_name]:
                     deleted_result.append(
-                        clients[device_region_index_dict[device_name]].delete_quantumTask(task_id)
+                        clients[device_region_index_dict[device_name]].delete_quantumTask(task_id)[
+                            "quantumTaskArn"
+                        ]
                     )
         return deleted_result
 
@@ -253,7 +268,11 @@ def delete_task_over_max_cost(
     # TODO
     # price definition
     price_per_task: float = 0.3
-    price_table: dict = {"d-wave": 0.00019, "ionq": 0.01, "rigetti": 0.00035}
+    price_table: dict = {
+        "rigetti": 0.00035,
+        "d-wave": 0.00019,
+        "ionq": 0.01,
+    }
     price_each_status_index: dict = {"QUEUED": 0, "COMPLETED": 1, "CANCELLED": 2}
     price_each_status: list = [0] * len(price_each_status_index)
 
@@ -286,7 +305,9 @@ def delete_task_over_max_cost(
             if "/" not in bucket_name:
                 for task_id in task_info_each_status[0]["id"][bucket_name]:
                     deleted_result.append(
-                        clients[device_region_index_dict[device_name]].delete_quantumTask(task_id)
+                        clients[device_region_index_dict[device_name]].delete_quantumTask(task_id)[
+                            "quantumTaskArn"
+                        ]
                     )
     return deleted_result
 
@@ -298,7 +319,7 @@ def send_email(lambda_output, TOPIC_ARN):
     response = client.publish(TopicArn=TOPIC_ARN, Message=msg, Subject=subject)
 
 
-def post_slack(lambda_output, deleted_result, slack_post_url,event,context):
+def post_slack(lambda_output, deleted_result, slack_post_url, event, context):
 
     # 設定
     username = "speed"
@@ -309,11 +330,28 @@ def post_slack(lambda_output, deleted_result, slack_post_url,event,context):
     # メッセージの内容
     now = datetime.now()
     current_time = now.strftime("%Y/%m/%d %H:%M:%S")
-    operation_message = "Task Information" + " " + current_time + "\n" + "from Lambda function ARN:" + context.invoked_function_arn + "\n" + "triggered event: \n" + str(event["detail"])
+    operation_message = (
+        "# Task Information"
+        + " "
+        + current_time
+        + "\n"
+        + "from Lambda function ARN:"
+        + context.invoked_function_arn
+        + "\n"
+        + "- triggered event: \n"
+        + str(event["detail"])
+    )
 
     detail_info = str(lambda_output)
-    delete_message = "delete task result\n" + str(deleted_result)
-    message = operation_message + "\n" + "triggered task information:\n"+ detail_info + "\n" + delete_message
+    delete_message = "- delete task result\n" + str(deleted_result)
+    message = (
+        operation_message
+        + "\n"
+        + "- triggered task information:\n"
+        + detail_info
+        + "\n"
+        + delete_message
+    )
     send_data = {
         "username": username,
         "icon_emoji": icom,
