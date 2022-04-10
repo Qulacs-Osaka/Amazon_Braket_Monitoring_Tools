@@ -64,7 +64,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
         device_providers, device_names, event
     )
     if is_known_device == False:
-        post_slack("error: unknown_device", " ", SLACK_POST_URL)
+        post_slack("error: unknown_device", " ", SLACK_POST_URL,event,context)
         return {"error": "unkown device"}
 
     # store task results for each status to result dictionary
