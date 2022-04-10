@@ -24,7 +24,7 @@ AmazonBraketlibの主なメソッド
 
 QUEUED状態の指定したタスクをキャンセルできる.
 ## lambda_fucntion.py
-このlambda関数は, braketに投げられたQUEUED状態のTaskをイベントソースとし, shot数またはshot数によって発生する金額の上限を超えたら, QUEUED状態のTaskを全てCANCELLEDにする関数です.
+このlambda関数は, braketに投げられたQUEUED状態のTaskをイベントソースとし, 同日に投げられたQUEUED状態のtaskの総shot数またはshot数によって発生する総金額が, あらかじめ指定した上限を超えたら, QUEUED状態のTaskを全てCANCELLEDにする関数です.
 結果はslackに通知します.
 slackの設定方法は[こちら](https://www.takapy.work/entry/2019/02/20/140751)
 を参照してください.

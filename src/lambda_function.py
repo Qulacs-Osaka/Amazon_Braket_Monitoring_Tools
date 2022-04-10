@@ -26,18 +26,19 @@ def lambda_handler(event: dict, context: dict) -> dict:
         (str): json-format string
     """
     SLACK_POST_URL = os.environ['SLACK_POST_URL']
+    CLIENT_TOKEN = os.environ['CLIENT_TOKEN']
     MAX_SHOT_NUM = 50
     MAX_SHOT_COST = 5  # dollar
 
     logger.info(event)
     # set boto user
-    ama_us_west_1 = AmazonBraketlib("us-west-1")  # riggeti
-    ama_us_west_2 = AmazonBraketlib("us-west-2")  # D-wave
-    ama_us_east_1 = AmazonBraketlib("us-east-1")  # IonQ
+    ama_us_west_1 = AmazonBraketlib("us-west-1",CLIENT_TOKEN)  # riggeti
+    ama_us_west_2 = AmazonBraketlib("us-west-2",CLIENT_TOKEN)  # D-wave
+    ama_us_east_1 = AmazonBraketlib("us-east-1",CLIENT_TOKEN)  # IonQ
     clients: list = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
 
     # device definition
-    device_providers: list[str] = ["d-wave", "d-wave", "ionq", "rigetti","rigetti"]
+    device_providers: list[str] = ["d-wave", "d-wave", "ionq", "rigetti", "rigetti"]
     device_names: list[str] = [
         "DW_2000Q_6",
         "Advantage_system4",
@@ -72,16 +73,20 @@ def lambda_handler(event: dict, context: dict) -> dict:
     task_count_each_status: list[int] = [0, 0, 0]
     task_info_each_status: list = []
     result: dict = {}
+    deviceArn :str = event["detail"]["deviceArn"]
     (
         shots_count_each_status,
         task_count_each_status,
         task_info_each_status,
         result,
     ) = set_task_results(
+        shots_count_each_status,
+        task_count_each_status,
+        task_info_each_status,
         clients,
         device_region_index_dict,
         device_provider,
-        device_name,
+        deviceArn
     )
 
     # set output json string values
@@ -95,8 +100,6 @@ def lambda_handler(event: dict, context: dict) -> dict:
         MAX_SHOT_NUM,
         clients,
         device_region_index_dict,
-        device_type,
-        device_provider,
         device_name,
         shots_count_each_status,
         task_info_each_status,
@@ -109,18 +112,22 @@ def lambda_handler(event: dict, context: dict) -> dict:
 
 
 def set_task_results(
-    clients: list, device_region_index_dict: dict, device_provider, device_name
+        shots_count_each_status: list[int],
+        task_count_each_status: list[int],
+        task_info_each_status: list,
+        clients: list,
+        device_region_index_dict: dict,
+        device_provider: str,
+        deviceArn: str
 ) -> tuple[list[int], list[int], list, dict]:
     # store task results for each status to result dictionary
-    shots_count_each_status: list[int] = [0, 0, 0]
-    task_count_each_status: list[int] = [0, 0, 0]
-    task_info_each_status: list = []
+
     result: dict = {}
     today_date = [date.today().year, date.today().month, date.today().day]
 
     for task_status_index in range(3):
         result = clients[device_region_index_dict[device_provider]].get_info(
-            *today_date, "qpu", device_provider, device_name, task_status_index
+            *today_date, deviceArn, task_status_index
         )
         task_info_each_status.append(result)
 
@@ -180,8 +187,6 @@ def delete_task_over_max_shot(
     max_shot_num: int,
     clients: list,
     device_region_index_dict: dict,
-    device_type: str,
-    device_provider: str,
     device_name: str,
     shots_count_each_status: list[int],
     task_info_each_status: list[dict],
@@ -191,8 +196,6 @@ def delete_task_over_max_shot(
         max_shot_num :
         clients :
         device_region_index_dict :
-        device_type :
-        device_provider :
         device_name :
 
     Returns:
@@ -230,7 +233,6 @@ def delete_task_over_max_cost(
     max_cost: int,
     clients: list,
     device_region_index_dict: dict,
-    device_type: str,
     device_provider: str,
     device_name: str,
     shots_count_each_status: list[int],
@@ -242,7 +244,6 @@ def delete_task_over_max_cost(
         max_cost :
         clients :
         device_region_index_dict :
-        device_type :
         device_provider :
         device_name :
     Returns:
@@ -300,7 +301,6 @@ def send_email(lambda_output, TOPIC_ARN):
 def post_slack(lambda_output, deleted_result, slack_post_url,event,context):
 
     # 設定
-
     username = "speed"
     icom = ":sunglasses:"
     channnel = "#general"
