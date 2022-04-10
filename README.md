@@ -28,6 +28,8 @@ QUEUED状態の指定したタスクをキャンセルできる.
 
 このlambda関数は, braketに投げられたCREATED状態のTaskをイベントソースとし, 同日に投げられたQUEUED状態のtaskの総shot数またはshot数によって発生する総金額が, あらかじめ指定した上限を超えたら, QUEUED状態のTaskを全てCANCELLEDにする関数です.
 
+
+
 cost及びshot数の上限はlambda_function.pyの
 
 処理の結果はslackに通知します.
@@ -35,6 +37,14 @@ cost及びshot数の上限はlambda_function.pyの
 slackの設定方法は[こちら](https://www.takapy.work/entry/2019/02/20/140751)
 を参照してください.
 
+### lambda_function.py内の主要な関数
+
+- delete_task_over_max_shot()
+
+triggerされたtaskのregionでQUEUEDされている総shot数が上限を超えたら, taskを全て消去するlambda関数
+- delete_task_over_max_cost()
+
+triggerされたtaskのregionでQUEUEDされている総コストが上限を超えたら, taskを全て消去するlambda関数
 
 ## How To Use
 
@@ -76,14 +86,6 @@ EventBridgeのイベントパターンは以下のように設定してくださ
 ```
 そして, 先ほど作成したlambda関数をターゲットに指定してください.
 
-### lambda_function.py内の主要な関数
-
-- delete_task_over_max_shot()
-
-triggerされたtaskのregionでQUEUEDされている総shot数が上限を超えたら, taskを全て消去するlambda関数
-- delete_task_over_max_cost()
-
-triggerされたtaskのregionでQUEUEDされている総コストが上限を超えたら, taskを全て消去するlambda関数
 
 
 ### slackの通知の形式(2022/4/10の時点で)
