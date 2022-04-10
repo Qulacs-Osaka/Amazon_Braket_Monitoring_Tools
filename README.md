@@ -35,6 +35,19 @@ cost及びshot数の上限はlambda_function.pyの
 slackの設定方法は[こちら](https://www.takapy.work/entry/2019/02/20/140751)
 を参照してください.
 
+
+## How To Use
+
+1. clone this repository
+2. Set up AWS lambda function and EventBridge according to [this instructions](https://braketmonitor-document.s3.ap-northeast-1.amazonaws.com/index.html)
+3. upload the zip file which contains src/AmazonBraketlib.py and lambda_function.py
+
+
+Lambda及びEventBridgeの詳細な設定方法は, 以下のドキュメントを参照してください.
+なお, EventBridgeのイベントパターンとsrc/のソースコードは更新されていません. すぐ下の注意及びこのリポジトリ内のコードを優先してください.
+https://braketmonitor-document.s3.ap-northeast-1.amazonaws.com/index.html
+
+以下に設定の注意を述べます.
 ### AWS Lambdaの設定について
 - 注意1: EventBridgeは自分と同じregion内のtaskのstatus変化しか監視しないので, regionごとにLambda と EventBridgeを設定する必要があります.
 
@@ -98,10 +111,6 @@ VScodeのremote-containerを用いて簡単にmfa認証のできるDocker環境�
 
 
 
-Lambda及びEventBridgeの詳細な設定方法は, 以下のドキュメントを参照してください.
-なお, コードとEventBridgeのイベントパターンは更新されていません. README及びこのリポジトリ内のコードを優先してください.
-
-https://braketmonitor-document.s3.ap-northeast-1.amazonaws.com/index.html
 
 
 # Reference
