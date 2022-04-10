@@ -66,9 +66,11 @@ EventBridgeのイベントパターンは以下のように設定してくださ
 ### lambda_function.py内の主要な関数
 
 - delete_task_over_max_shot()
-shot数に応じてtaskを消去するlambda関数
+
+triggerされたtaskのregionでQUEUEDされている総shot数が上限を超えたら, taskを全て消去するlambda関数
 - delete_task_over_max_cost()
-金額に応じてtaskを消去するlambda関数
+
+triggerされたtaskのregionでQUEUEDされている総コストが上限を超えたら, taskを全て消去するlambda関数
 
 
 ### slackの通知の形式(2022/4/10の時点で)
