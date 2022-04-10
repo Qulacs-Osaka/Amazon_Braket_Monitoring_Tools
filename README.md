@@ -63,15 +63,20 @@ https://braketmonitor-document.s3.ap-northeast-1.amazonaws.com/index.html
 
 - 注意2: EventBridgeは非同期呼び出しのため,発生したイベントはキューに入れられる仕様となっています. また, 非同期呼び出しでは, lambda関数呼び出しに失敗してもしなくても2回以上3回以下同じイベントが呼び出されることがあリます.
 
+- 注意3: time out設定が3msとかだと動きません.
 
-Lambda関数を作成し, AmazonBraketlib.pyとlambda_function.pyをzip fileにまとめてuploadし,
+- 注意4: Lambda関数にAmazonBraketFullAccess権限を付与してください.
+
+- 注意5: Lambda関数を作成し, AmazonBraketlib.pyとlambda_function.pyをzip fileにまとめてupload
 [How to upload zip](https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/python-package.html)
-SLACK_POST_URL及びCLIENT_TOKENをAWS Lambdaの環境変数に設定してください.
+
+- 注意6: SLACK_POST_URL及びCLIENT_TOKENをAWS Lambdaの環境変数に設定してください.
 ![image](fig/env_var_lambda.png)
 
-Lambda関数には,  AmazonBraketFullAccessの権限を付与してください.
+
 
 ### Amazon EventBridgeの設定について
+
 
 EventBridgeのイベントパターンは以下のように設定してください.
 ```
