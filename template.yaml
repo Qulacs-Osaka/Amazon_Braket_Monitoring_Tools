@@ -1,8 +1,13 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: "AWS::Serverless-2016-10-31"
 Description: An AWS Serverless Specification template describing your function.
+Parameters:
+  SLACKPOSTURL:
+    Type: String
+    Description: Enter Slack URL for notification.
+
 Resources:
-  blogtest1:
+  srcLambdaFunction:
     Type: "AWS::Serverless::Function"
     Properties:
       Runtime: python3.9
@@ -11,3 +16,18 @@ Resources:
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Timeout: 20
+      Environment:
+        Variables:
+          SLACK_POST_URL: !Ref SLACKPOSTURL
+      Policies:
+        - AmazonBraketFullAccess
+
+      Events:
+        OnBraketAction:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              {
+                "source": ["aws.braket"],
+                "detail-type": ["Braket Task State Change"],
+              }

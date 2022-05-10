@@ -27,20 +27,20 @@ def lambda_handler(event: dict, context: dict) -> dict:
     """
     # 定数設定
     SLACK_POST_URL = os.environ["SLACK_POST_URL"]
-    CLIENT_TOKEN = os.environ["CLIENT_TOKEN"]
     MAX_SHOT_NUM = 50
     MAX_SHOT_COST = 5  # dollar
 
     logger.info(event)
 
     # set boto user
-    ama_us_west_1 = AmazonBraketlib("us-west-1", CLIENT_TOKEN)  # riggeti
-    ama_us_west_2 = AmazonBraketlib("us-west-2", CLIENT_TOKEN)  # D-wave
-    ama_us_east_1 = AmazonBraketlib("us-east-1", CLIENT_TOKEN)  # IonQ
+    ama_us_west_1 = AmazonBraketlib("us-west-1")  # riggeti
+    ama_us_west_2 = AmazonBraketlib("us-west-2")  # D-wave
+    ama_us_east_1 = AmazonBraketlib("us-east-1")  # IonQ
     clients: list = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
 
     # device definition
-    device_providers: list[str] = ["d-wave", "d-wave", "ionq", "rigetti", "rigetti"]
+    device_providers: list[str] = [
+        "d-wave", "d-wave", "ionq", "rigetti", "rigetti"]
     device_names: list[str] = [
         "DW_2000Q_6",
         "Advantage_system4",
@@ -67,7 +67,8 @@ def lambda_handler(event: dict, context: dict) -> dict:
         device_providers, device_names, event
     )
     if is_known_device == False:
-        post_slack("error: unknown_device", " ", SLACK_POST_URL, event, context)
+        post_slack("error: unknown_device", " ",
+                   SLACK_POST_URL, event, context)
         return {"error": "unkown device"}
 
     # store task results for each status to result dictionary
@@ -119,7 +120,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
     # )
 
     # send_email(lambda_output, TOPIC_ARN)
-    post_slack(lambda_output, deleted_result, SLACK_POST_URL, event, context)
+    # post_slack(lambda_output, deleted_result, SLACK_POST_URL, event, context)
 
     return lambda_output
 
@@ -149,7 +150,8 @@ def set_task_results(
         if result["total_shots"]:
             for id_name in result["id"].keys():
                 if not "/" in id_name:
-                    task_count_each_status[task_status_index] += len(result["id"][id_name])
+                    task_count_each_status[task_status_index] += len(
+                        result["id"][id_name])
     return (
         shots_count_each_status,
         task_count_each_status,
@@ -273,7 +275,8 @@ def delete_task_over_max_cost(
         "d-wave": 0.00019,
         "ionq": 0.01,
     }
-    price_each_status_index: dict = {"QUEUED": 0, "COMPLETED": 1, "CANCELLED": 2}
+    price_each_status_index: dict = {
+        "QUEUED": 0, "COMPLETED": 1, "CANCELLED": 2}
     price_each_status: list = [0] * len(price_each_status_index)
 
     # Calculate the total cost of each state
@@ -361,7 +364,8 @@ def post_slack(lambda_output, deleted_result, slack_post_url, event, context):
 
     send_text = ("payload=" + json.dumps(send_data)).encode("utf-8")
 
-    request = urllib.request.Request(slack_post_url, data=send_text, method=method)
+    request = urllib.request.Request(
+        slack_post_url, data=send_text, method=method)
     with urllib.request.urlopen(request) as response:
         response_body = response.read().decode("utf-8")
 
