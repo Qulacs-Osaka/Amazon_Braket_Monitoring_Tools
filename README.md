@@ -68,9 +68,6 @@ trigger された task の region で QUEUED されている総コストが上�
 
 - STACKNAME: name to identify your project name in deploy step. (This is used as a AWS CloudFormation StackName.)
 - REGION: AWS region name to deploy software to.
-- LambdaRoleArn: Role Arn for attaching to this software. Role should have these policies attached.
-  - AmazonSNSFullAccess: for sending email though Amazon Simple Notification Service.
-  - AmazonBraketFullAccess: for fetching informations from Amazon Braket.
 - SLACKPOSTURL: API URL used for [Slack notification](https://api.slack.com/messaging/webhooks).
 - notificationEmail: your email for receiving notification from this software.
 
