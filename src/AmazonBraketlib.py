@@ -1,10 +1,11 @@
-import boto3  # type:ignore
 from collections import defaultdict
 from datetime import date, timedelta
 
+import boto3  # type:ignore
+
 
 class AmazonBraketlib:
-    def __init__(self, region: str = "us-east-1", clientToken: str = ""):
+    def __init__(self, region: str = "us-east-1"):
         """Initialize configuration of braket client and some data
         Args:
             region: The AWS Region
@@ -18,7 +19,6 @@ class AmazonBraketlib:
         self.s3_count_id: dict[str, list[str]] = {}
         self.target_name: list[str] = ["QUEUED", "COMPLETED", "CANCELLED", "RUNNING"]
         self.region: str = region
-        self.clientToken: str = clientToken
         self.braket = boto3.client("braket", region_name=self.region)
 
     def __calculate_shots_num(
@@ -125,6 +125,7 @@ class AmazonBraketlib:
             response = self.braket.search_quantum_tasks(
                 filters=own_filters, maxResults=10, nextToken=next_token
             )
+            print(response)
             if response["quantumTasks"]==[]:
                 has_next_token=False
                 break
@@ -142,6 +143,10 @@ class AmazonBraketlib:
                 # nextTokenは, 次のトークンがない場合nullであるため, もしnullだとresponse['nextToken']でエラーになる
                 if "nextToken" in response:
                     next_token = response["nextToken"]
+                else:
+                    break
+            else:
+                break
 
         return {
             "id": self.s3_count_id,
@@ -160,5 +165,5 @@ class AmazonBraketlib:
         Returns:
             _type_: _description_
         """
-        response = self.braket.cancel_quantum_task(clientToken=self.clientToken,quantumTaskArn=quantumTaskArn_name)
+        response = self.braket.cancel_quantum_task(quantumTaskArn=quantumTaskArn_name)
         return response

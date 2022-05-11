@@ -5,6 +5,14 @@ Parameters:
   SLACKPOSTURL:
     Type: String
     Description: Enter Slack URL for notification.
+    AllowedPattern: "https?://[\\w!?/+\\-_~;.,*&@#$%()'\\[\\]]+"
+    ConstraintDescription: "SLACKPOSTURL must be URL."
+
+  NOTIFICATIONEMAIL:
+    Type: String
+    Description: Enter email for notification.
+    AllowedPattern: "[\\w\\-._]+@[\\w\\-._]+\\.[A-Za-z]+"
+    ConstraintDescription: "NOTIFICATIONEMAIL must be email."
 
 Resources:
   srcLambdaFunction:
@@ -14,13 +22,16 @@ Resources:
       Description: ""
       CodeUri: ./src
       Handler: lambda_function.lambda_handler
-      MemorySize: 128
-      Timeout: 20
+      MemorySize: 1024
+      Timeout: 60
       Environment:
         Variables:
           SLACK_POST_URL: !Ref SLACKPOSTURL
+          TOPIC_ARN: !Ref NotifyMailSNSTopic
       Policies:
         - AmazonBraketFullAccess
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt NotifyMailSNSTopic.TopicName
 
       Events:
         OnBraketAction:
@@ -31,3 +42,11 @@ Resources:
                 "source": ["aws.braket"],
                 "detail-type": ["Braket Task State Change"],
               }
+
+  NotifyMailSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: notify-mail-sns-topic
+      Subscription:
+        - Endpoint: !Ref NOTIFICATIONEMAIL
+          Protocol: email

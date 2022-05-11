@@ -1,13 +1,12 @@
-import boto3  # type:ignore
-from datetime import datetime, date
-from AmazonBraketlib import AmazonBraketlib
 import json
-import urllib.request
-from datetime import datetime
-import os
-
 import logging
+import os
+import urllib.request
+from datetime import date, datetime
 
+import boto3  # type:ignore
+
+from AmazonBraketlib import AmazonBraketlib
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -27,6 +26,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
     """
     # 定数設定
     SLACK_POST_URL = os.environ["SLACK_POST_URL"]
+    TOPIC_ARN = os.environ["TOPIC_ARN"]
     MAX_SHOT_NUM = 50
     MAX_SHOT_COST = 5  # dollar
 
@@ -119,8 +119,8 @@ def lambda_handler(event: dict, context: dict) -> dict:
     #    task_count_each_status,
     # )
 
-    # send_email(lambda_output, TOPIC_ARN)
-    # post_slack(lambda_output, deleted_result, SLACK_POST_URL, event, context)
+    send_email(lambda_output, TOPIC_ARN)
+    post_slack(lambda_output, deleted_result, SLACK_POST_URL, event, context)
 
     return lambda_output
 
