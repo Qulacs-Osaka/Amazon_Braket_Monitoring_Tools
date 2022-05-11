@@ -43,8 +43,9 @@ Resources:
           Properties:
             Pattern:
               {
-                "source": ["aws.braket"],
                 "detail-type": ["Braket Task State Change"],
+                "source": ["aws.braket"],
+                "detail": { "status": ["CREATED"] },
               }
 
   NotifyMailSNSTopic:

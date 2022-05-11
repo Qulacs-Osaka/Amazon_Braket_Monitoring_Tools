@@ -60,7 +60,7 @@ trigger された task の region で QUEUED されている総コストが上�
 - [AWS SAM](https://pypi.org/project/aws-sam-cli/) for sam commands
 - GNU make
 
-### Install steps
+### Install/Update steps
 
 1. clone this repository.
 2. edit Makefile parameters.
@@ -98,12 +98,25 @@ Successfully created/updated stack
 $ make clean
 
 Are you sure you want to delete the stack <STACKNAME> in the region <REGION>? [y/N]: y
-Do you want to delete the template file <somehash>.template in S3? [y/N]: y
+Do you want to delete the template file [some hash value].template in S3? [y/N]: y
 - Deleting S3 object
 - Deleting Cloudformation stack
 
 Deleted successfully
 ```
+
+2. delete Role associated with LambdaRoleArn if necessary.
+
+### deploy Q&A
+
+### Install step fails with ROLLBACK_COMPLETE state error
+
+```
+An error occurred (ValidationError) when calling the CreateChangeSet operation: Stack:arn:aws:cloudformation:stack/service/7e1d8c70-d60f-11e9-9728-0a4501e4ce4c is in ROLLBACK_COMPLETE state and can not be updated.
+```
+
+In this case, we need to clean all created resources for this software.
+Follow Uninstall step to clean resources and try install step again.
 
 以下に設定の注意を述べます.
 
@@ -111,28 +124,7 @@ Deleted successfully
 
 - 注意 1: EventBridge は自分と同じ region 内の task の status 変化しか監視しないので, region ごとに設定を行う必要があります.
 
-- 注意 2: EventBridge は非同期呼び出しのため,発生したイベントはキューに入れられる仕様となっています. また, 非同期呼び出しでは, lambda 関数呼び出しに失敗してもしなくても 2 回以上 3 回以下同じイベントが呼び出されることがあリます.
-
-- 注意 3: time out 設定が 3ms とかだと動きません.
-
-- 注意 4: Lambda 関数に AmazonBraketFullAccess 権限を付与してください.
-
-### Amazon EventBridge の設定について
-
-EventBridge のイベントパターンは以下のように設定してください.
-
-```
-{
-  "detail-type": ["Braket Task State Change"],
-  "source": ["aws.braket"],
-  "detail": {
-    "status": ["CREATED"]
-  }
-}
-
-```
-
-そして, 先ほど作成した lambda 関数をターゲットに指定してください.
+- 注意 2: EventBridge は非同期呼び出しのため,発生したイベントはキューに入れられる仕様となっているため通知が送信されるまで遅延があります. また, 非同期呼び出しでは, lambda 関数呼び出しに失敗してもしなくても 2 回以上 3 回以下同じイベントが呼び出されることがあるため, 複数回通知が送信されることがあります.
 
 ### slack の通知の形式(2022/4/10 の時点で)
 
