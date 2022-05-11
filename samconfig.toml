@@ -3,4 +3,3 @@ version = 0.1
 [default.deploy]
 [default.deploy.parameters]
 confirm_changeset = true
-capabilities = "CAPABILITY_IAM"

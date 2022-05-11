@@ -57,6 +57,7 @@ trigger された task の region で QUEUED されている総コストが上�
   - AmazonS3FullAccess: for saving internal-data for deployment.
   - AWSLambda_FullAccess: for deploying internal-lambda service.
   - AmazonSNSFullAccess: for deploying email notification service.
+  - CloudWatchEventsFullAccess: for creating log stream and integration between AWS Braket and Lambda for internal-lambda service.
 - [AWS SAM](https://pypi.org/project/aws-sam-cli/) for sam commands
 - GNU make
 
@@ -70,7 +71,6 @@ trigger された task の region で QUEUED されている総コストが上�
 - LambdaRoleArn: Role Arn for attaching to this software. Role should have these policies attached.
   - AmazonSNSFullAccess: for sending email though Amazon Simple Notification Service.
   - AmazonBraketFullAccess: for fetching informations from Amazon Braket.
-  - CloudWatchEventsFullAccess: for sending logs.
 - SLACKPOSTURL: API URL used for [Slack notification](https://api.slack.com/messaging/webhooks).
 - notificationEmail: your email for receiving notification from this software.
 
