@@ -46,7 +46,6 @@ Resources:
   NotifyMailSNSTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: notify-mail-sns-topic
       Subscription:
         - Endpoint: !Ref NOTIFICATIONEMAIL
           Protocol: email
