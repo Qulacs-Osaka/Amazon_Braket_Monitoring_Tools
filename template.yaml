@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+Description: An AWS Serverless Specification template describing your function.
+Parameters:
+  SLACKPOSTURL:
+    Type: String
+    Description: Enter Slack URL for notification.
+    AllowedPattern: "https?://[\\w!?/+\\-_~;.,*&@#$%()'\\[\\]]+"
+    ConstraintDescription: "SLACKPOSTURL must be URL."
+
+  NOTIFICATIONEMAIL:
+    Type: String
+    Description: Enter email for notification.
+    AllowedPattern: "[\\w\\-._]+@[\\w\\-._]+\\.[A-Za-z]+"
+    ConstraintDescription: "NOTIFICATIONEMAIL must be email."
+
+Resources:
+  srcLambdaFunction:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      Runtime: python3.9
+      Description: ""
+      CodeUri: ./src
+      Handler: lambda_function.lambda_handler
+      MemorySize: 1024
+      Timeout: 60
+      Environment:
+        Variables:
+          SLACK_POST_URL: !Ref SLACKPOSTURL
+          TOPIC_ARN: !Ref NotifyMailSNSTopic
+      Policies:
+        - AmazonBraketFullAccess
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt NotifyMailSNSTopic.TopicName
+      Events:
+        OnBraketAction:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              {
+                "detail-type": ["Braket Task State Change"],
+                "source": ["aws.braket"],
+                "detail": { "status": ["CREATED"] },
+              }
+
+  NotifyMailSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: !Ref NOTIFICATIONEMAIL
+          Protocol: email
