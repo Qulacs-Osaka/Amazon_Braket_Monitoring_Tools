@@ -1,16 +1,19 @@
 # Amazon_Braket_Monitoring_Tools
+
 Tools to monitor Amazon Braket
 
-このリポジトリはAmazon Braketを利用する上でのタスク監視、削除の支援ツールのコード置き場です。
+このリポジトリは Amazon Braket を利用する上でのタスク監視、削除の支援ツールのコード置き場です。
 
 ## AmazonBraketlib class
-Braket taskを監視・削除する基本メソッドが含まれたクラス.
 
-AmazonBraketlibの主なメソッド
+Braket task を監視・削除する基本メソッドが含まれたクラス.
+
+AmazonBraketlib の主なメソッド
 
 - get_info(year, month, day, device_type, device_provider, device_name, index_of_status_type)
-指定した日付の指定したデバイスのタスクに関する情報をjson形式で出力する.
-出力されるjson文字列の例は以下の通り
+  指定した日付の指定したデバイスのタスクに関する情報を json 形式で出力する.
+  出力される json 文字列の例は以下の通り
+
 ```
 {"id": self.s3_count_id,
     "count": self.s3_shot_count_dic, "total_shots": self.total_shots_dic[self.target_name[index_of_status_type]],
@@ -22,63 +25,102 @@ AmazonBraketlibの主なメソッド
 
 - delete_quantumTask(quantumTaskArn_name)
 
-QUEUED状態の指定したタスクをキャンセルできる.
+QUEUED 状態の指定したタスクをキャンセルできる.
 
 ## lambda_fucntion.py
 
-このlambda関数は, braketに投げられたCREATED状態のTaskをイベントソースとし, 同日に投げられたQUEUED状態のtaskの総shot数またはshot数によって発生する総金額が, あらかじめ指定した上限を超えたら, QUEUED状態のTaskを全てCANCELLEDにする関数です.
+この lambda 関数は, braket に投げられた CREATED 状態の Task をイベントソースとし, 同日に投げられた QUEUED 状態の task の総 shot 数または shot 数によって発生する総金額が, あらかじめ指定した上限を超えたら, QUEUED 状態の Task を全て CANCELLED にする関数です.
 
+cost 及び shot 数の上限は lambda_function.py の
 
+処理の結果は slack に通知します.
 
-cost及びshot数の上限はlambda_function.pyの
-
-処理の結果はslackに通知します.
-
-slackの設定方法は[こちら](https://www.takapy.work/entry/2019/02/20/140751)
+slack の設定方法は[こちら](https://www.takapy.work/entry/2019/02/20/140751)
 を参照してください.
 
-### lambda_function.py内の主要な関数
+### lambda_function.py 内の主要な関数
 
 - delete_task_over_max_shot()
 
-triggerされたtaskのregionでQUEUEDされている総shot数が上限を超えたら, taskを全て消去するlambda関数
+trigger された task の region で QUEUED されている総 shot 数が上限を超えたら, task を全て消去する lambda 関数
+
 - delete_task_over_max_cost()
 
-triggerされたtaskのregionでQUEUEDされている総コストが上限を超えたら, taskを全て消去するlambda関数
+trigger された task の region で QUEUED されている総コストが上限を超えたら, task を全て消去する lambda 関数
 
 ## How To Use
 
-1. clone this repository
-2. Set up AWS lambda function and EventBridge according to [this instructions](https://braketmonitor-document.s3.ap-northeast-1.amazonaws.com/index.html)
-3. upload the zip file which contains src/AmazonBraketlib.py and lambda_function.py
+### Prerequirements
 
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) with [configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html) which have following policies:
+  - AWSCloudFormationFullAccess: for deployment.
+  - AmazonS3FullAccess: for saving internal-data for deployment.
+  - AWSLambda_FullAccess: for deploying internal-lambda service.
+  - AmazonSNSFullAccess: for deploying email notification service.
+- [AWS SAM](https://pypi.org/project/aws-sam-cli/) for sam commands
+- GNU make
 
-Lambda及びEventBridgeの詳細な設定方法は, 以下のドキュメントを参照してください.
-なお, EventBridgeのイベントパターンとsrc/のソースコードは更新されていません. すぐ下の注意及びこのリポジトリ内のコードを優先してください.
-https://braketmonitor-document.s3.ap-northeast-1.amazonaws.com/index.html
+### Install steps
+
+1. clone this repository.
+2. edit Makefile parameters.
+
+- STACKNAME: name to identify your project name in deploy step. (This is used as a AWS CloudFormation StackName.)
+- REGION: AWS region name to deploy software to.
+- LambdaRoleArn: Role Arn for attaching to this software. Role should have these policies attached.
+  - AmazonSNSFullAccess: for sending email though Amazon Simple Notification Service.
+  - AmazonBraketFullAccess: for fetching informations from Amazon Braket.
+  - CloudWatchEventsFullAccess: for sending logs.
+- SLACKPOSTURL: API URL used for [Slack notification](https://api.slack.com/messaging/webhooks).
+- notificationEmail: your email for receiving notification from this software.
+
+3. run make deploy and follow instructions to deploy.
+
+```
+$ make deploy
+
+# changeset is shown here.
+
+Deploy this changeset? [y/N]: y
+
+# progress will shown here.
+
+Successfully created/updated stack
+```
+
+4. check your email and confirm subscription from AWS Notification.
+
+### Uninstall step
+
+1. run make clean and follow instructions.
+
+```
+$ make clean
+
+Are you sure you want to delete the stack <STACKNAME> in the region <REGION>? [y/N]: y
+Do you want to delete the template file <somehash>.template in S3? [y/N]: y
+- Deleting S3 object
+- Deleting Cloudformation stack
+
+Deleted successfully
+```
 
 以下に設定の注意を述べます.
-### AWS Lambdaの設定について
-- 注意1: EventBridgeは自分と同じregion内のtaskのstatus変化しか監視しないので, regionごとにLambda と EventBridgeを設定する必要があります.
 
-- 注意2: EventBridgeは非同期呼び出しのため,発生したイベントはキューに入れられる仕様となっています. また, 非同期呼び出しでは, lambda関数呼び出しに失敗してもしなくても2回以上3回以下同じイベントが呼び出されることがあリます.
+### AWS Lambda の設定について
 
-- 注意3: time out設定が3msとかだと動きません.
+- 注意 1: EventBridge は自分と同じ region 内の task の status 変化しか監視しないので, region ごとに設定を行う必要があります.
 
-- 注意4: Lambda関数にAmazonBraketFullAccess権限を付与してください.
+- 注意 2: EventBridge は非同期呼び出しのため,発生したイベントはキューに入れられる仕様となっています. また, 非同期呼び出しでは, lambda 関数呼び出しに失敗してもしなくても 2 回以上 3 回以下同じイベントが呼び出されることがあリます.
 
-- 注意5: Lambda関数を作成し, AmazonBraketlib.pyとlambda_function.pyをzip fileにまとめてupload
-[How to upload zip](https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/python-package.html)
+- 注意 3: time out 設定が 3ms とかだと動きません.
 
-- 注意6: SLACK_POST_URL及びCLIENT_TOKENをAWS Lambdaの環境変数に設定してください.
-![image](fig/env_var_lambda.png)
+- 注意 4: Lambda 関数に AmazonBraketFullAccess 権限を付与してください.
 
+### Amazon EventBridge の設定について
 
+EventBridge のイベントパターンは以下のように設定してください.
 
-### Amazon EventBridgeの設定について
-
-
-EventBridgeのイベントパターンは以下のように設定してください.
 ```
 {
   "detail-type": ["Braket Task State Change"],
@@ -89,11 +131,10 @@ EventBridgeのイベントパターンは以下のように設定してくださ
 }
 
 ```
-そして, 先ほど作成したlambda関数をターゲットに指定してください.
 
+そして, 先ほど作成した lambda 関数をターゲットに指定してください.
 
-
-### slackの通知の形式(2022/4/10の時点で)
+### slack の通知の形式(2022/4/10 の時点で)
 
 ```
 # Task Information 2022/04/10 09:32:39
@@ -106,26 +147,18 @@ from Lambda function ARN:arn:aws:lambda:us-west-1:***
 ['arn:aws:braket:us-west-1:***', 'arn:aws:braket:us-west-1:***']
 ```
 
-
-
 ## コンテナ環境
 
-本リポジトリのDockerfile, docker-compose.ymlで作成されるコンテナは, AWSのconfig, credentialsファイルが含まれる ~/.aws/ と Amazon_Braket_Monitoring_Tools/src/ をvolumeで共有しています.
+本リポジトリの Dockerfile, docker-compose.yml で作成されるコンテナは, AWS の config, credentials ファイルが含まれる ~/.aws/ と Amazon_Braket_Monitoring_Tools/src/ を volume で共有しています.
 
-VScodeのremote-containerを用いて簡単にmfa認証のできるDocker環境が作れます.
+VScode の remote-container を用いて簡単に mfa 認証のできる Docker 環境が作れます.
 
 詳しくは[aws-notebook-docker-env](https://github.com/speed1313/aws-notebook-docker-env)を参照してください.
 
-
-
-
-
 # Reference
+
 [Amazon Braket Developer Guide](https://docs.aws.amazon.com/ja_jp/braket/latest/developerguide/what-is-braket.html)
 
 [EventBridge イベントパターン](https://docs.aws.amazon.com/ja_jp/eventbridge/latest/userguide/eb-event-patterns.html)
 
 [boto3 braket api](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/braket.html)
-
-
-
