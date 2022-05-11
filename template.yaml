@@ -14,12 +14,6 @@ Parameters:
     AllowedPattern: "[\\w\\-._]+@[\\w\\-._]+\\.[A-Za-z]+"
     ConstraintDescription: "NOTIFICATIONEMAIL must be email."
 
-  LAMBDAROLEARN:
-    Type: String
-    Description: Enter role arn to attach to lambda function. AmazonBraketFullAccess and AmazonSNSFullAccess is required.
-    AllowedPattern: "arn:aws:iam::.*"
-    ConstraintDescription: "LAMBDAROLEARN must be ARN."
-
 Resources:
   srcLambdaFunction:
     Type: "AWS::Serverless::Function"
@@ -34,7 +28,6 @@ Resources:
         Variables:
           SLACK_POST_URL: !Ref SLACKPOSTURL
           TOPIC_ARN: !Ref NotifyMailSNSTopic
-      Role: !Ref LAMBDAROLEARN
       Policies:
         - AmazonBraketFullAccess
         - SNSPublishMessagePolicy:
