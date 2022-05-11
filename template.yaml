@@ -17,6 +17,8 @@ Parameters:
   LAMBDAROLEARN:
     Type: String
     Description: Enter role arn to attach to lambda function. AmazonBraketFullAccess and AmazonSNSFullAccess is required.
+    AllowedPattern: "arn:aws:iam::.*"
+    ConstraintDescription: "LAMBDAROLEARN must be ARN."
 
 Resources:
   srcLambdaFunction:

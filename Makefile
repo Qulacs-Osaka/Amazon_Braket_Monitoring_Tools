@@ -1,8 +1,8 @@
 STACKNAME := "amazonBraketMonitoringTool"
 REGION := "us-west-1"
-LambdaRoleArn := "arn:aws:iam::227122787190:role/amazon-braket-monitor"
-SLACKPOSTURL := "https://hooks.slack.com/services/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"
-notificationEmail := "kotamanegi84@gmail.com"
+LambdaRoleArn := "role ARN starting from arn:aws:iam"
+SLACKPOSTURL := "slack post url starting from https:"
+notificationEmail := "notification email"
 
 build: FORCE
 	sam build
