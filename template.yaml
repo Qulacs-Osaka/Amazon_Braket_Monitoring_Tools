@@ -14,6 +14,15 @@ Parameters:
     AllowedPattern: "[\\w\\-._]+@[\\w\\-._]+\\.[A-Za-z]+"
     ConstraintDescription: "NOTIFICATIONEMAIL must be email."
 
+  MAXNUM:
+    Type: Number
+    Description: Enter Max number of shots.
+
+  MAXCOST:
+    Type: Number
+    Description: Enter Max cost. 
+
+
 Resources:
   srcLambdaFunction:
     Type: "AWS::Serverless::Function"
@@ -28,6 +37,8 @@ Resources:
         Variables:
           SLACK_POST_URL: !Ref SLACKPOSTURL
           TOPIC_ARN: !Ref NotifyMailSNSTopic
+          MAX_NUM: !Ref MAXNUM
+          MAX_COST: !Ref MAXCOST
       Policies:
         - AmazonBraketFullAccess
         - SNSPublishMessagePolicy:
@@ -40,7 +51,7 @@ Resources:
               {
                 "detail-type": ["Braket Task State Change"],
                 "source": ["aws.braket"],
-                "detail": { "status": ["CREATED"] },
+                "detail": { "status": ["CREATED","CANCELLED"] },
               }
 
   NotifyMailSNSTopic:
