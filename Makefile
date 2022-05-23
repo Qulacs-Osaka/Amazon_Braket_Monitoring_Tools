@@ -1,7 +1,7 @@
 STACKNAME := "amazonBraketMonitoringTool"
 REGION := "us-west-1"
 SLACKPOSTURL := "slack post url starting from https:"
-notificationEmail := "pyroxene68473@gmail.com"
+notificationEmail := "notification email"
 MAXNUM := 100
 MAXCOST := 1
 
