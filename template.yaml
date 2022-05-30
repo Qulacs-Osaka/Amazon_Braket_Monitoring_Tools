@@ -14,11 +14,11 @@ Parameters:
     AllowedPattern: "[\\w\\-._]+@[\\w\\-._]+\\.[A-Za-z]+"
     ConstraintDescription: "NOTIFICATIONEMAIL must be email."
 
-  MAXNUM:
+  MAXSHOTNUM:
     Type: Number
     Description: Enter Max number of shots.
 
-  MAXCOST:
+  MAXSHOTCOST:
     Type: Number
     Description: Enter Max cost. 
 
@@ -37,8 +37,8 @@ Resources:
         Variables:
           SLACK_POST_URL: !Ref SLACKPOSTURL
           TOPIC_ARN: !Ref NotifyMailSNSTopic
-          MAX_NUM: !Ref MAXNUM
-          MAX_COST: !Ref MAXCOST
+          MAX_SHOT_NUM: !Ref MAXSHOTNUM
+          MAX_SHOT_COST: !Ref MAXSHOTCOST
       Policies:
         - AmazonBraketFullAccess
         - SNSPublishMessagePolicy:

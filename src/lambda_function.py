@@ -27,8 +27,8 @@ def lambda_handler(event: dict, context: dict) -> dict:
     # 定数設定
     SLACK_POST_URL = os.environ["SLACK_POST_URL"]
     TOPIC_ARN = os.environ["TOPIC_ARN"]
-    MAX_SHOT_NUM = int(os.environ["MAX_NUM"])
-    MAX_SHOT_COST = int(os.environ["MAX_COST"])  # dollar
+    MAX_SHOT_NUM = int(os.environ["MAX_SHOT_NUM"])
+    MAX_SHOT_COST = int(os.environ["MAX_SHOT_COST"])  # dollar
 
     logger.info(event)
 
