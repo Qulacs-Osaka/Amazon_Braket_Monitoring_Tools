@@ -1,52 +1,6 @@
 # Amazon_Braket_Monitoring_Tools
 
-Tools to monitor Amazon Braket
-
-このリポジトリは Amazon Braket を利用する上でのタスク監視、削除の支援ツールのコード置き場です。
-
-## AmazonBraketlib class
-
-Braket task を監視・削除する基本メソッドが含まれたクラス.
-
-AmazonBraketlib の主なメソッド
-
-- get_info(year, month, day, device_type, device_provider, device_name, index_of_status_type)
-  指定した日付の指定したデバイスのタスクに関する情報を json 形式で出力する.
-  出力される json 文字列の例は以下の通り
-
-```
-{"id": self.s3_count_id,
-    "count": self.s3_shot_count_dic, "total_shots": self.total_shots_dic[self.target_name[index_of_status_type]],
-    "hardware": device_provider,
-    "qpu": device_name, "status": target_status,
-    'date': str(year)+'-'+str(month)+'-'+str(day)
-    }
-```
-
-- delete_quantumTask(quantumTaskArn_name)
-
-QUEUED 状態の指定したタスクをキャンセルできる.
-
-## lambda_fucntion.py
-
-この lambda 関数は, braket に投げられた CREATED 状態の Task をイベントソースとし, 同日に投げられた QUEUED 状態の task の総 shot 数または shot 数によって発生する総金額が, あらかじめ指定した上限を超えたら, QUEUED 状態の Task を全て CANCELLED にする関数です.
-
-cost 及び shot 数の上限は lambda_function.py の
-
-処理の結果は slack に通知します.
-
-slack の設定方法は[こちら](https://www.takapy.work/entry/2019/02/20/140751)
-を参照してください.
-
-### lambda_function.py 内の主要な関数
-
-- delete_task_over_max_shot()
-
-trigger された task の region で QUEUED されている総 shot 数が上限を超えたら, task を全て消去する lambda 関数
-
-- delete_task_over_max_cost()
-
-trigger された task の region で QUEUED されている総コストが上限を超えたら, task を全て消去する lambda 関数
+This is the Amazon Braket monitoring tool provided by Amazon. This tool deletes all tasks when a predetermined number of Shots or a predetermined fee is reached.
 
 ## How To Use
 
@@ -70,6 +24,8 @@ trigger された task の region で QUEUED されている総コストが上�
 - REGION: AWS region name to deploy software to.
 - SLACKPOSTURL: API URL used for [Slack notification](https://api.slack.com/messaging/webhooks).
 - notificationEmail: your email for receiving notification from this software.
+- MAXSHOTNUM: Threshold number of shots
+- MAXSHOTCOST: Threshold 
 
 3. run make deploy and follow instructions to deploy.
 
@@ -143,6 +99,54 @@ from Lambda function ARN:arn:aws:lambda:us-west-1:***
 VScode の remote-container を用いて簡単に mfa 認証のできる Docker 環境が作れます.
 
 詳しくは[aws-notebook-docker-env](https://github.com/speed1313/aws-notebook-docker-env)を参照してください.
+
+
+## Codes
+
+### AmazonBraketlib class
+
+Braket task を監視・削除する基本メソッドが含まれたクラス.
+
+AmazonBraketlib の主なメソッド
+
+- get_info(year, month, day, device_type, device_provider, device_name, index_of_status_type)
+  指定した日付の指定したデバイスのタスクに関する情報を json 形式で出力する.
+  出力される json 文字列の例は以下の通り
+
+```
+{"id": self.s3_count_id,
+    "count": self.s3_shot_count_dic, "total_shots": self.total_shots_dic[self.target_name[index_of_status_type]],
+    "hardware": device_provider,
+    "qpu": device_name, "status": target_status,
+    'date': str(year)+'-'+str(month)+'-'+str(day)
+    }
+```
+
+- delete_quantumTask(quantumTaskArn_name)
+
+QUEUED 状態の指定したタスクをキャンセルできる.
+
+### lambda_fucntion.py
+
+この lambda 関数は, braket に投げられた CREATED 状態の Task をイベントソースとし, 同日に投げられた QUEUED 状態の task の総 shot 数または shot 数によって発生する総金額が, あらかじめ指定した上限を超えたら, QUEUED 状態の Task を全て CANCELLED にする関数です.
+
+cost 及び shot 数の上限は lambda_function.py の
+
+処理の結果は slack に通知します.
+
+slack の設定方法は[こちら](https://www.takapy.work/entry/2019/02/20/140751)
+を参照してください.
+
+### lambda_function.py 内の主要な関数
+
+- delete_task_over_max_shot()
+
+trigger された task の region で QUEUED されている総 shot 数が上限を超えたら, task を全て消去する lambda 関数
+
+- delete_task_over_max_cost()
+
+trigger された task の region で QUEUED されている総コストが上限を超えたら, task を全て消去する lambda 関数
+
 
 # Reference
 
