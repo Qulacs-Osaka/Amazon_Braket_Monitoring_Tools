@@ -3,9 +3,8 @@ import logging
 import os
 import urllib.request
 from datetime import date, datetime
-
 import boto3  # type:ignore
-
+import settings
 from AmazonBraketlib import AmazonBraketlib
 
 logger = logging.getLogger()
@@ -39,25 +38,9 @@ def lambda_handler(event: dict, context: dict) -> dict:
     clients: list = [ama_us_west_1, ama_us_west_2, ama_us_east_1]
 
     # device definition
-    device_providers: list[str] = [
-        "d-wave", "d-wave", "ionq", "rigetti", "rigetti"]
-    device_names: list[str] = [
-        "DW_2000Q_6",
-        "Advantage_system4",
-        "ionQdevice",
-        "Aspen-11",
-        "Aspen-M-1",
-    ]
-    device_region_index_dict: dict[str, int] = {
-        "d-wave": 1,
-        "rigetti": 0,
-        "ionq": 2,
-        "DW_2000Q_6": 1,
-        "Advantage_system4": 1,
-        "ionQdevice": 2,
-        "Aspen-11": 0,
-        "Aspen-M-1": 0,
-    }
+    device_providers: list[str] = settings.DEVICE_PROVIDERS
+    device_names: list[str] = settings.DEVICE_NAMES
+    device_region_index_dict: dict[str, int] = settings.DEVICE_REGION_INDEX_DICT
 
     # setting device of Tasks that have now changed the status
     device_provider: str
@@ -67,8 +50,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
         device_providers, device_names, event
     )
     if is_known_device == False:
-        post_slack("error: unknown_device", " ",
-                   SLACK_POST_URL, event, context)
+        post_slack("error: unknown_device", " ", SLACK_POST_URL, event, context)
         return {"error": "unkown device"}
 
     # store task results for each status to result dictionary
@@ -151,7 +133,8 @@ def set_task_results(
             for id_name in result["id"].keys():
                 if not "/" in id_name:
                     task_count_each_status[task_status_index] += len(
-                        result["id"][id_name])
+                        result["id"][id_name]
+                    )
     return (
         shots_count_each_status,
         task_count_each_status,
@@ -239,9 +222,9 @@ def delete_task_over_max_shot(
             if "/" not in bucket_name:
                 for task_id in task_info_each_status[0]["id"][bucket_name]:
                     deleted_result.append(
-                        clients[device_region_index_dict[device_name]].delete_quantumTask(task_id)[
-                            "quantumTaskArn"
-                        ]
+                        clients[
+                            device_region_index_dict[device_name]
+                        ].delete_quantumTask(task_id)["quantumTaskArn"]
                     )
         return deleted_result
 
@@ -269,14 +252,9 @@ def delete_task_over_max_cost(
 
     # TODO
     # price definition
-    price_per_task: float = 0.3
-    price_table: dict = {
-        "rigetti": 0.00035,
-        "d-wave": 0.00019,
-        "ionq": 0.01,
-    }
-    price_each_status_index: dict = {
-        "QUEUED": 0, "COMPLETED": 1, "CANCELLED": 2}
+    price_per_task: float = settings.PRICE_PER_TASK
+    price_table: dict = settings.PRICE_TABLE
+    price_each_status_index: dict = {"QUEUED": 0, "COMPLETED": 1, "CANCELLED": 2}
     price_each_status: list = [0] * len(price_each_status_index)
 
     # Calculate the total cost of each state
@@ -284,7 +262,8 @@ def delete_task_over_max_cost(
         price_each_status[price_each_status_index[price_status]] = (
             shots_count_each_status[price_each_status_index[price_status]]
             * price_table[device_provider]
-            + task_count_each_status[price_each_status_index[price_status]] * price_per_task
+            + task_count_each_status[price_each_status_index[price_status]]
+            * price_per_task
         )
 
     print(
@@ -308,9 +287,9 @@ def delete_task_over_max_cost(
             if "/" not in bucket_name:
                 for task_id in task_info_each_status[0]["id"][bucket_name]:
                     deleted_result.append(
-                        clients[device_region_index_dict[device_name]].delete_quantumTask(task_id)[
-                            "quantumTaskArn"
-                        ]
+                        clients[
+                            device_region_index_dict[device_name]
+                        ].delete_quantumTask(task_id)["quantumTaskArn"]
                     )
     return deleted_result
 
@@ -326,7 +305,7 @@ def post_slack(lambda_output, deleted_result, slack_post_url, event, context):
 
     # 設定
     username = "speed"
-    icom = ":sunglasses:"
+    icon = ":sunglasses:"
     channnel = "#general"
     method = "POST"
 
@@ -357,15 +336,14 @@ def post_slack(lambda_output, deleted_result, slack_post_url, event, context):
     )
     send_data = {
         "username": username,
-        "icon_emoji": icom,
+        "icon_emoji": icon,
         "text": message,
         "channel": channnel,
     }
 
     send_text = ("payload=" + json.dumps(send_data)).encode("utf-8")
 
-    request = urllib.request.Request(
-        slack_post_url, data=send_text, method=method)
+    request = urllib.request.Request(slack_post_url, data=send_text, method=method)
     with urllib.request.urlopen(request) as response:
         response_body = response.read().decode("utf-8")
 
