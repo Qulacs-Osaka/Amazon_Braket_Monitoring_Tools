@@ -26,8 +26,8 @@ def lambda_handler(event: dict, context: dict) -> dict:
     # 定数設定
     SLACK_POST_URL = os.environ["SLACK_POST_URL"]
     TOPIC_ARN = os.environ["TOPIC_ARN"]
-    MAX_SHOT_NUM = 50
-    MAX_SHOT_COST = 5  # dollar
+    MAX_SHOT_NUM = int(os.environ["MAX_SHOT_NUM"])
+    MAX_SHOT_COST = int(os.environ["MAX_SHOT_COST"])  # dollar
 
     logger.info(event)
 
@@ -90,16 +90,16 @@ def lambda_handler(event: dict, context: dict) -> dict:
         task_info_each_status,
     )
 
-    # deleted_result: dict = delete_task_over_max_cost(
-    #    MAX_SHOT_COST,
-    #    clients,
-    #    device_region_index_dict,
-    #    device_provider,
-    #    device_name,
-    #    shots_count_each_status,
-    #    task_info_each_status,
-    #    task_count_each_status,
-    # )
+    deleted_result: dict = delete_task_over_max_cost(
+        MAX_SHOT_COST,
+        clients,
+        device_region_index_dict,
+        device_provider,
+        device_name,
+        shots_count_each_status,
+        task_info_each_status,
+        task_count_each_status,
+    )
 
     send_email(lambda_output, TOPIC_ARN)
     post_slack(lambda_output, deleted_result, SLACK_POST_URL, event, context)
