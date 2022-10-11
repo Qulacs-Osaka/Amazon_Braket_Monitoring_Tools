@@ -25,7 +25,7 @@ This is the Amazon Braket monitoring tool provided by Amazon. This tool deletes 
 - SLACKPOSTURL: API URL used for [Slack notification](https://api.slack.com/messaging/webhooks).
 - notificationEmail: your email for receiving notification from this software.
 - MAXSHOTNUM: Threshold number of shots
-- MAXSHOTCOST: Threshold 
+- MAXSHOTCOST: Threshold
 
 3. run make deploy and follow instructions to deploy.
 
@@ -141,11 +141,11 @@ slack の設定方法は[こちら](https://www.takapy.work/entry/2019/02/20/140
 
 - delete_task_over_max_shot()
 
-trigger された task の region で QUEUED されている総 shot 数が上限を超えたら, task を全て消去する lambda 関数
+trigger された task の region で QUEUED されている総 shot 数が上限以上になったら, QUEUEDのtask を全て消去する lambda 関数
 
 - delete_task_over_max_cost()
 
-trigger された task の region で QUEUED されている総コストが上限を超えたら, task を全て消去する lambda 関数
+trigger された task の region で QUEUED されている総コストが上限以上になったら, QUEUEDのtask を全て消去する lambda 関数
 
 
 # Reference

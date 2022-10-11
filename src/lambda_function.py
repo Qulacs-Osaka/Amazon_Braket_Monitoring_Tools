@@ -95,14 +95,15 @@ def lambda_handler(event: dict, context: dict) -> dict:
         clients,
         device_region_index_dict,
         device_provider,
-        device_name,
         shots_count_each_status,
         task_info_each_status,
         task_count_each_status,
     )
 
     send_email(lambda_output, TOPIC_ARN)
-    post_slack(lambda_output, deleted_result, deleted_result2, SLACK_POST_URL, event, context)
+    post_slack(
+        lambda_output, deleted_result, deleted_result2, SLACK_POST_URL, event, context
+    )
 
     return lambda_output
 
@@ -224,7 +225,6 @@ def delete_task_over_max_cost(
     clients: list,
     device_region_index_dict: dict,
     device_provider: str,
-    device_name: str,
     shots_count_each_status: list[int],
     task_info_each_status: list[dict],
     task_count_each_status: list[int],
@@ -288,7 +288,9 @@ def send_email(lambda_output, TOPIC_ARN):
     client.publish(TopicArn=TOPIC_ARN, Message=msg, Subject=subject)
 
 
-def post_slack(lambda_output, deleted_result, deleted_result2, slack_post_url, event, context):
+def post_slack(
+    lambda_output, deleted_result, deleted_result2, slack_post_url, event, context
+):
 
     # 設定
     username = "speed"
@@ -312,7 +314,9 @@ def post_slack(lambda_output, deleted_result, deleted_result2, slack_post_url, e
     )
 
     detail_info = str(lambda_output)
-    delete_message = "- delete task result\n" + str(deleted_result) + str(delete_result2)
+    delete_message = (
+        "- delete task result\n" + str(deleted_result) + str(deleted_result2)
+    )
     message = (
         operation_message
         + "\n"
