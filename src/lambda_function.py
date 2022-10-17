@@ -102,7 +102,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
 
     send_email(lambda_output, TOPIC_ARN)
     post_slack(
-        lambda_output, deleted_result, deleted_result2, SLACK_POST_URL, event, context
+        lambda_output, SLACK_POST_URL, event, context
     )
 
     return lambda_output
@@ -289,7 +289,7 @@ def send_email(lambda_output, TOPIC_ARN):
 
 
 def post_slack(
-    lambda_output, deleted_result, deleted_result2, slack_post_url, event, context
+    lambda_output, slack_post_url, event, context
 ):
 
     # 設定
@@ -306,38 +306,20 @@ def post_slack(
         + " "
         + current_time
         + "\n"
-        + "from Lambda function ARN:"
-        + context.invoked_function_arn
-        + "\n"
         + "- triggered event: \n"
-        + str(event["detail"])
+        + "status: " + str(event["detail"]["status"]) + ", "
+        + "deviceArn: " + str(event["detail"]["deviceArn"]) + ", "
+        + "shots: " + str(event["detail"]["shots"]) + "\n"
     )
 
     detail_info = str(lambda_output)
-    if deleted_result is None and deleted_result2 is None:
-        delete_message = (
-        "- delete task result\n" + "No task was deleted"
-        )
-    elif deleted_result is None:
-        delete_message = (
-        "- delete task result\n" + str(deleted_result2)
-    )
-    elif deleted_result2 is None:
-        delete_message = (
-            "- delete task result\n" + str(deleted_result)
-        )
-    else:
-        delete_message = (
-            "- delete task result\n" + str(deleted_result)
-        )
 
     message = (
         operation_message
         + "\n"
-        + "- triggered task information:\n"
+        + "- Total task information for a specific device:\n"
         + detail_info
         + "\n"
-        + delete_message
     )
     send_data = {
         "username": username,
