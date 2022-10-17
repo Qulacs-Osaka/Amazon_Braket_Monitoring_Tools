@@ -81,7 +81,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
         lambda_output, result, shots_count_each_status, task_count_each_status
     )
 
-    deleted_result: dict = delete_task_over_max_shot(
+    deleted_result: list = delete_task_over_max_shot(
         MAX_SHOT_NUM,
         clients,
         device_region_index_dict,
@@ -90,7 +90,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
         task_info_each_status,
     )
 
-    deleted_result2: dict = delete_task_over_max_cost(
+    deleted_result2: list = delete_task_over_max_cost(
         MAX_SHOT_COST,
         clients,
         device_region_index_dict,
@@ -314,9 +314,23 @@ def post_slack(
     )
 
     detail_info = str(lambda_output)
-    delete_message = (
-        "- delete task result\n" + str(deleted_result) + str(deleted_result2)
+    if deleted_result is None and deleted_result2 is None:
+        delete_message = (
+        "- delete task result\n" + "No task was deleted"
+        )
+    elif deleted_result is None:
+        delete_message = (
+        "- delete task result\n" + str(deleted_result2)
     )
+    elif deleted_result2 is None:
+        delete_message = (
+            "- delete task result\n" + str(deleted_result)
+        )
+    else:
+        delete_message = (
+            "- delete task result\n" + str(deleted_result)
+        )
+
     message = (
         operation_message
         + "\n"
