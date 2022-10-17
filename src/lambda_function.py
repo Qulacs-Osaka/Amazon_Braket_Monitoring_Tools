@@ -51,7 +51,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
         device_table, event
     )
     if is_known_device is False:
-        post_slack("error: unknown_device", " ", " ", SLACK_POST_URL, event, context)
+        post_slack("error: unknown_device", SLACK_POST_URL, event)
         return {"error": "unknown device"}
 
     # store task results for each status to result dictionary
@@ -101,9 +101,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
     )
 
     send_email(lambda_output, TOPIC_ARN)
-    post_slack(
-        lambda_output, SLACK_POST_URL, event, context
-    )
+    post_slack(lambda_output, SLACK_POST_URL, event)
 
     return lambda_output
 
@@ -288,14 +286,9 @@ def send_email(lambda_output, TOPIC_ARN):
     client.publish(TopicArn=TOPIC_ARN, Message=msg, Subject=subject)
 
 
-def post_slack(
-    lambda_output, slack_post_url, event, context
-):
+def post_slack(lambda_output, slack_post_url, event):
 
     # 設定
-    username = "speed"
-    icon = ":sunglasses:"
-    channnel = "#general"
     method = "POST"
 
     # メッセージの内容
@@ -307,9 +300,15 @@ def post_slack(
         + current_time
         + "\n"
         + "*- triggered event: *\n"
-        + "status: " + str(event["detail"]["status"]) + ", "
-        + "deviceArn: " + str(event["detail"]["deviceArn"]) + ", "
-        + "shots: " + str(event["detail"]["shots"]) + "\n"
+        + "status: "
+        + str(event["detail"]["status"])
+        + ", "
+        + "deviceArn: "
+        + str(event["detail"]["deviceArn"])
+        + ", "
+        + "shots: "
+        + str(event["detail"]["shots"])
+        + "\n"
     )
 
     detail_info = str(lambda_output)
@@ -322,13 +321,15 @@ def post_slack(
         + "\n"
     )
     send_data = {
-        "username": username,
-        "icon_emoji": icon,
-        "text": {
-            "type": "mrkdwn",
-            "text": message,
-        }
-        "channel": channnel,
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": message,
+                },
+            }
+        ],
     }
 
     send_text = ("payload=" + json.dumps(send_data)).encode("utf-8")

@@ -1,6 +1,6 @@
 # Amazon_Braket_Monitoring_Tools
 
-This is the Amazon Braket monitoring tool provided by Amazon. This tool deletes all tasks when a predetermined number of Shots or a predetermined fee is reached.
+This is the Amazon Braket monitoring tool provided by Amazon. This tool deletes all tasks for a specific device when a predetermined number of Shots or a predetermined fee is reached.
 
 ## How To Use
 
@@ -21,7 +21,7 @@ This is the Amazon Braket monitoring tool provided by Amazon. This tool deletes 
 2. edit Makefile parameters.
 
 - STACKNAME: name to identify your project name in deploy step. (This is used as a AWS CloudFormation StackName.)
-- REGION: AWS region name to deploy software to.
+- REGION: AWS region name to deploy software to. (Attention: For each region you use, you have to change the region name and deploy.)
 - SLACKPOSTURL: API URL used for [Slack notification](https://api.slack.com/messaging/webhooks).
 - notificationEmail: your email for receiving notification from this software.
 - MAXSHOTNUM: Threshold number of shots
@@ -71,34 +71,16 @@ An error occurred (ValidationError) when calling the CreateChangeSet operation: 
 In this case, we need to clean all created resources for this software.
 Follow Uninstall step to clean resources and try install step again.
 
-以下に設定の注意を述べます.
 
-### AWS Lambda の設定について
+### Note on aws lambda configuration
 
 - 注意 1: EventBridge は自分と同じ region 内の task の status 変化しか監視しないので, region ごとに設定を行う必要があります.
 
 - 注意 2: EventBridge は非同期呼び出しのため,発生したイベントはキューに入れられる仕様となっているため通知が送信されるまで遅延があります. また, 非同期呼び出しでは, lambda 関数呼び出しに失敗してもしなくても 2 回以上 3 回以下同じイベントが呼び出されることがあるため, 複数回通知が送信されることがあります.
 
-### slack の通知の形式(2022/4/10 の時点で)
+### example of the slack notification
 
-```
-# Task Information 2022/04/10 09:32:39
-from Lambda function ARN:arn:aws:lambda:us-west-1:***
-- triggered event:
-{'quantumTaskArn': 'arn:aws:braket:us-west-1:***', 'status': 'CREATED', 'deviceArn': 'arn:aws:braket:us-west-1::device/qpu/rigetti/Aspen-M-1', 'shots': '50', 'outputS3Bucket': 'amazon-braket-us-west-1-***', 'outputS3Directory': 'tasks/***', 'createdAt': '2022-04-10T09:32:27.370Z', 'eventName': 'INSERT'}
-- triggered task information:
-{'date': '2022-4-10', 'qpu': 'arn:aws:braket:us-west-1***', 'QUEUED_shot_count': 100, 'QUEUED_task_conut': 2, 'COMPLETED_shot_count': 0, 'COMPLETED_task_count': 0, 'CANCELLED_shot_count': 290, 'CANCELLED_task_count': 17}
-- delete task result
-['arn:aws:braket:us-west-1:***', 'arn:aws:braket:us-west-1:***']
-```
-
-## コンテナ環境
-
-本リポジトリの Dockerfile, docker-compose.yml で作成されるコンテナは, AWS の config, credentials ファイルが含まれる ~/.aws/ と Amazon_Braket_Monitoring_Tools/src/ を volume で共有しています.
-
-VScode の remote-container を用いて簡単に mfa 認証のできる Docker 環境が作れます.
-
-詳しくは[aws-notebook-docker-env](https://github.com/speed1313/aws-notebook-docker-env)を参照してください.
+![slack notification image](fig/slack_example.png)
 
 
 ## Codes
