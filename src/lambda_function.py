@@ -302,11 +302,11 @@ def post_slack(
     now = datetime.now()
     current_time = now.strftime("%Y/%m/%d %H:%M:%S")
     operation_message = (
-        "# Task Information"
+        "*# Task Information*"
         + " "
         + current_time
         + "\n"
-        + "- triggered event: \n"
+        + "*- triggered event: *\n"
         + "status: " + str(event["detail"]["status"]) + ", "
         + "deviceArn: " + str(event["detail"]["deviceArn"]) + ", "
         + "shots: " + str(event["detail"]["shots"]) + "\n"
@@ -317,14 +317,17 @@ def post_slack(
     message = (
         operation_message
         + "\n"
-        + "- Total task information for a specific device:\n"
+        + "*- Total task information for a specific device:*\n"
         + detail_info
         + "\n"
     )
     send_data = {
         "username": username,
         "icon_emoji": icon,
-        "text": message,
+        "text": {
+            "type": "mrkdwn",
+            "text": message,
+        }
         "channel": channnel,
     }
 
