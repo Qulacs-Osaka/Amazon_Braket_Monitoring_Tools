@@ -43,7 +43,9 @@ class AmazonBraketlib:
             if task["status"] == self.target_name[index_of_status_type] and task[
                 "createdAt"
             ].date() == date(year, month, day):
-                self.total_shots[self.target_name[index_of_status_type]] += task["shots"]
+                self.total_shots[self.target_name[index_of_status_type]] += task[
+                    "shots"
+                ]
 
                 # output s3 information is like this
                 # 'count': {'amazon-braket-issa': 8100,
@@ -62,14 +64,19 @@ class AmazonBraketlib:
                 # task result fileの格納フォルダ名
                 self.s3_folder_name = list(task["outputS3Directory"].split("/"))[0]
                 bucket_name = task["outputS3Bucket"] + "/" + self.s3_folder_name
-                if self.s3_folder_name not in self.s3_bucket_folder_name[task["outputS3Bucket"]]:
-                    self.s3_bucket_folder_name[task["outputS3Bucket"]].append(self.s3_folder_name)
+                if (
+                    self.s3_folder_name
+                    not in self.s3_bucket_folder_name[task["outputS3Bucket"]]
+                ):
+                    self.s3_bucket_folder_name[task["outputS3Bucket"]].append(
+                        self.s3_folder_name
+                    )
                     self.s3_shot_count[bucket_name] = 0
                     self.s3_count_id[bucket_name] = []
                 self.s3_shot_count[bucket_name] += task["shots"]
                 self.s3_count_id[bucket_name].append(task["quantumTaskArn"])
 
-            elif (date(year, month, day) - task["createdAt"].date() > delta) == True:
+            elif (date(year, month, day) - task["createdAt"].date() > delta) is True:
                 return False
         return True
 
@@ -105,7 +112,7 @@ class AmazonBraketlib:
         for I in self.target_name:
             self.total_shots[I] = 0
         # 指定した日付とタスクの日付の差の上限
-        delta: timedelta = timedelta(seconds=24*60*60)
+        delta: timedelta = timedelta(seconds=24 * 60 * 60)
         # Array of SearchQuantumTasksFilter objects.
         own_filters = [
             {
@@ -126,8 +133,8 @@ class AmazonBraketlib:
                 filters=own_filters, maxResults=10, nextToken=next_token
             )
             print(response)
-            if response["quantumTasks"]==[]:
-                has_next_token=False
+            if response["quantumTasks"] == []:
+                has_next_token = False
                 break
             has_next_token = self.__calculate_shots_num(
                 year,
@@ -139,7 +146,7 @@ class AmazonBraketlib:
             )
 
             # 次のtokenがないなら, 終了
-            if has_next_token == True:
+            if has_next_token is True:
                 # nextTokenは, 次のトークンがない場合nullであるため, もしnullだとresponse['nextToken']でエラーになる
                 if "nextToken" in response:
                     next_token = response["nextToken"]

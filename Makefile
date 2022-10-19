@@ -15,4 +15,4 @@ deploy: build FORCE
 clean: FORCE
 	sam delete --stack-name $(STACKNAME) --region $(REGION)
 
-FORCE: 
+FORCE:
